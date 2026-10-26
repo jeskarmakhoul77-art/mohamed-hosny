@@ -1,0 +1,8 @@
+# Videos Directory
+# Place MP4 video files or video posters here:
+# - video-01-owner-intro.mp4
+# - video-02-client-interview.mp4
+# - video-03-finishing-process.mp4
+# - video-04-completed-apartment.mp4
+# - video-05-commercial-project.mp4
+# Or use hosted video URLs in src/config/assetsManifest.ts
