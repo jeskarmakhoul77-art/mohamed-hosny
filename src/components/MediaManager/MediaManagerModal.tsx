@@ -15,10 +15,6 @@ import {
   saveLocalApartmentStages,
   saveLocalPortfolioSlots,
   saveLocalVideoSlots,
-  loginAdmin,
-  logoutAdmin,
-  checkAdminAuth,
-  getAdminAuthToken,
   fetchSupabaseStatus,
   saveSupabaseSettings
 } from '../../services/mediaStorage';
@@ -36,8 +32,6 @@ import {
   FileCheck,
   AlertTriangle,
   Lock,
-  Unlock,
-  KeyRound,
   Layers,
   Search,
   ExternalLink,
@@ -78,11 +72,8 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
   videoSlots,
   onRefreshData
 }) => {
-  // Authentication State (Server-Authoritative)
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => !!getAdminAuthToken());
-  const [pinInput, setPinInput] = useState('');
-  const [pinError, setPinError] = useState<string | null>(null);
-  const [isVerifyingPin, setIsVerifyingPin] = useState(false);
+  // Authentication State: Direct Owner Access (Password prompt removed)
+  const [isAuthenticated] = useState<boolean>(true);
 
   // Tabs
   const [activeTab, setActiveTab] = useState<'images' | 'bulk' | 'videos' | 'settings'>('images');
@@ -141,12 +132,9 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
   const videoFileInputRef = useRef<HTMLInputElement>(null);
   const [targetVideoForUpload, setTargetVideoForUpload] = useState<string | null>(null);
 
-  // Check auth and Supabase status on mount / open
+  // Refresh Supabase status on open
   useEffect(() => {
     if (isOpen) {
-      checkAdminAuth().then((authed) => {
-        setIsAuthenticated(authed);
-      });
       refreshSupabaseStatus();
     }
   }, [isOpen]);
@@ -186,36 +174,6 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
   }, [apartmentStages, portfolioSlots, currentLang]);
 
   if (!isOpen) return null;
-
-  // Handle Login via Server
-  const handlePinSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!pinInput.trim()) return;
-
-    setIsVerifyingPin(true);
-    setPinError(null);
-
-    const res = await loginAdmin(pinInput);
-    setIsVerifyingPin(false);
-
-    if (res.success) {
-      setIsAuthenticated(true);
-      setPinError(null);
-      setPinInput('');
-      refreshSupabaseStatus();
-    } else {
-      setPinError(
-        currentLang === 'ar'
-          ? 'الرمز السري غير صحيح. يرجى التحقق وإعادة المحاولة.'
-          : 'Invalid administrative PIN. Please verify and try again.'
-      );
-    }
-  };
-
-  const handleLogout = async () => {
-    await logoutAdmin();
-    setIsAuthenticated(false);
-  };
 
   // Trigger file picker for a single slot
   const handleTriggerSingleUpload = (slotKey: string) => {
@@ -273,15 +231,6 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
         setUploadProgress(90);
 
         if (!res.success) {
-          if (res.error?.includes('Unauthorized')) {
-            setIsAuthenticated(false);
-            alert(
-              currentLang === 'ar'
-                ? 'انتهت صلاحية جلسة الإدارة. يرجى إعادة تسجيل الدخول.'
-                : 'Admin session expired. Please log in again.'
-            );
-            return;
-          }
           throw new Error(res.error || 'Server upload failed');
         }
 
@@ -737,16 +686,10 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {isAuthenticated && (
-              <button
-                onClick={handleLogout}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white/10 hover:bg-white/20 text-[#F7F5F0] rounded-sm transition-colors cursor-pointer"
-                title="Lock Session"
-              >
-                <Lock className="w-3.5 h-3.5 text-[#D1B995]" />
-                <span>{currentLang === 'ar' ? 'قفل الجلسة' : 'Lock'}</span>
-              </button>
-            )}
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-medium bg-[#1F4A3B] border border-[#D1B995]/40 text-[#D1B995] rounded-sm">
+              <Check className="w-3 h-3 text-[#D1B995]" />
+              <span>{currentLang === 'ar' ? 'وصول مباشر مفعل' : 'Direct Owner Access'}</span>
+            </span>
             <button
               onClick={onClose}
               className="p-1.5 text-[#F7F5F0]/70 hover:text-white rounded-sm cursor-pointer hover:bg-white/10"
@@ -757,64 +700,8 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
           </div>
         </div>
 
-        {/* AUTHENTICATION VIEW IF NOT SIGNED IN */}
-        {!isAuthenticated ? (
-          <div className="p-8 sm:p-16 flex flex-col items-center justify-center text-center max-w-md mx-auto my-auto">
-            <div className="w-14 h-14 rounded-full bg-[#152B24] border border-[#D1B995]/50 flex items-center justify-center text-[#D1B995] mb-4 shadow-lg">
-              <KeyRound className="w-7 h-7" />
-            </div>
-            <h3 className="text-xl font-bold text-[#1F4A3B] mb-2">
-              {currentLang === 'ar' ? 'تسجيل الدخول لإدارة وسائط الموقع' : 'Media Manager Access'}
-            </h3>
-            <p className="text-xs text-[#5C5C5C] mb-6 leading-relaxed">
-              {currentLang === 'ar'
-                ? 'لوحة إدارة الصور والفيديوهات محمية بالتحقق من الخادم. يرجى إدخال الرقم السري للمتابعة.'
-                : 'Protected management portal for verified project photography. Enter administrative PIN to proceed.'}
-            </p>
-
-            <form onSubmit={handlePinSubmit} className="w-full space-y-4">
-              <div>
-                <input
-                  type="password"
-                  value={pinInput}
-                  onChange={(e) => {
-                    setPinInput(e.target.value);
-                    setPinError(null);
-                  }}
-                  placeholder={currentLang === 'ar' ? 'أدخل الرمز السري للمسؤول' : 'Enter Administrator PIN'}
-                  className={`w-full px-4 py-3 text-center tracking-widest text-base font-mono bg-white border rounded-sm outline-none transition-all ${
-                    pinError ? 'border-red-500 ring-2 ring-red-200' : 'border-[#D1B995]/50 focus:border-[#1F4A3B]'
-                  }`}
-                  autoFocus
-                />
-                {pinError && (
-                  <p className="text-xs text-red-600 mt-2 font-medium">
-                    {pinError}
-                  </p>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                disabled={isVerifyingPin}
-                className="w-full py-3.5 bg-[#1F4A3B] hover:bg-[#152B24] text-[#D1B995] font-bold text-xs uppercase tracking-wider rounded-sm transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {isVerifyingPin ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Unlock className="w-4 h-4" />
-                )}
-                <span>
-                  {isVerifyingPin
-                    ? (currentLang === 'ar' ? 'جارٍ التحقق...' : 'Verifying...')
-                    : (currentLang === 'ar' ? 'دخول لوحة الإدارة' : 'Unlock Dashboard')}
-                </span>
-              </button>
-            </form>
-          </div>
-        ) : (
-          /* AUTHENTICATED DASHBOARD VIEW */
-          <div className="flex flex-col flex-1 overflow-hidden">
+        {/* DIRECT DASHBOARD VIEW */}
+        <div className="flex flex-col flex-1 overflow-hidden">
             
             {/* Supabase Ephemeral Storage Warning Banner (if using fallback) */}
             {supabaseStatus && !supabaseStatus.connected && (
@@ -1754,7 +1641,6 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
             </div>
 
           </div>
-        )}
 
       </div>
 

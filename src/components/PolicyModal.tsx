@@ -98,8 +98,8 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({
               </h4>
               <p>
                 {currentLang === 'ar'
-                  ? 'نلتزم في مؤسسة محمد حسني بحماية خصوصية جميع عملائنا. بيانات الاتصال، عناوين العقارات، وإيصالات التحويل البنكية تُعامل بسرية تامة ولا تُشارك مع أي طرف خارجي.'
-                  : 'At Mohamed Hosny Construction, we uphold strict confidentiality regarding all client data, site locations, floor plans, and financial payment slips.'}
+                  ? 'نلتزم في مؤسسة المهندس محمد حسني بحماية خصوصية جميع عملائنا. بيانات الاتصال، عناوين العقارات، وإيصالات التحويل البنكية تُعامل بسرية تامة ولا تُشارك مع أي طرف خارجي.'
+                  : 'At Eng. Mohamed Hosny Construction, we uphold strict confidentiality regarding all client data, site locations, floor plans, and financial payment slips.'}
               </p>
               <p>
                 {currentLang === 'ar'

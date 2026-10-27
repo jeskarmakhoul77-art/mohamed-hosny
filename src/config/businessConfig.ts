@@ -33,7 +33,7 @@ export const BUSINESS_CONFIG: BusinessConfig = {
   // Dynamically retrieved or updated
   whatsappNumber: getStoredWhatsAppNumber(),
   instapayAddress: '',
-  bankAccountName: 'محمد حسني — حساب التشطيبات المعمارية',
+  bankAccountName: 'المهندس محمد حسني — حساب التشطيبات المعمارية',
   bankAccountNumber: '',
   bankIban: '',
   bankName: 'البنك التجاري الدولي (CIB)',
@@ -122,7 +122,7 @@ export function buildWhatsAppLink(options: {
 
   let text = '';
   if (lang === 'ar') {
-    text = `السلام عليكم مؤسسة محمد حسني للتشطيبات المعمارية،
+    text = `السلام عليكم مؤسسة المهندس محمد حسني للتشطيبات المعمارية،
 أرغب في حجز معاينة هندسية لمشروعي (الخدمة: ${service}).
 
 📋 بيانات المشروع المبدئية:
@@ -136,7 +136,7 @@ export function buildWhatsAppLink(options: {
 
 (ملاحظة: أتفهم أن رسوم المعاينة 600 ج.م تُخصم بالكامل عند التعاقد على التنفيذ، وبرجاء تزويدي ببيانات التحويل عبر InstaPay أو Vodafone Cash).`;
   } else {
-    text = `Hello Mohamed Hosny Construction & Interior Design,
+    text = `Hello Eng. Mohamed Hosny Construction & Interior Design,
 I would like to request an on-site engineering inspection (Service: ${service}).
 
 📋 Project Details:

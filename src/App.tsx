@@ -198,7 +198,7 @@ export default function App() {
         {/* 8. Project Process (7 Sequential Stages) */}
         <ProjectProcess currentLang={currentLang} />
 
-        {/* 9. About Mohamed Hosny & Operating Pillars */}
+        {/* 9. About Eng. Mohamed Hosny & Operating Pillars */}
         <AboutSection currentLang={currentLang} />
 
         {/* 10. Engineering Leadership & Official Certificate — Eng. Mohamed Hosny */}

@@ -677,12 +677,12 @@ export const VIDEO_SLOTS_MANIFEST: VideoSlot[] = [
     slotKey: 'video-01-owner-intro',
     defaultFilePath: '/assets/videos/video-01-owner-intro.mp4',
     slotType: 'owner_intro',
-    titleAr: 'تعرّف على محمد حسني — رؤية العمل وجودة التنفيذ',
-    titleEn: 'Meet Mohamed Hosny — Our Execution Vision',
-    subtitleAr: 'فيديو تعريفي من مؤسس العمل يوضح فلسفة التشطيب المعماري والمصداقية',
-    subtitleEn: 'Company owner introduction detailing our architectural finishing philosophy',
-    descriptionAr: 'فيديو تعريفي مسجل مع محمد حسني يشرح منهجية استلام المواقع، ومراحل التنفيذ بدون مفاجآت، والالتزام الكامل بالمواصفات الهندسية.',
-    descriptionEn: 'Introductory presentation by Mohamed Hosny outlining our transparent workflow, site management, and uncompromising quality standards.',
+    titleAr: 'تعرّف على المهندس محمد حسني — رؤية العمل وجودة التنفيذ',
+    titleEn: 'Meet Eng. Mohamed Hosny — Our Execution Vision',
+    subtitleAr: 'فيديو تعريفي من مؤسس العمل المهندس محمد حسني يوضح فلسفة التشطيب المعماري والمصداقية',
+    subtitleEn: 'Company founder Eng. Mohamed Hosny introduction detailing our architectural finishing philosophy',
+    descriptionAr: 'فيديو تعريفي مسجل مع المهندس محمد حسني يشرح منهجية استلام المواقع، ومراحل التنفيذ بدون مفاجآت، والالتزام الكامل بالمواصفات الهندسية.',
+    descriptionEn: 'Introductory presentation by Eng. Mohamed Hosny outlining our transparent workflow, site management, and uncompromising quality standards.',
     posterUrl: '/assets/aistudio/Luxury_Architectural_Gold_Monogram_Branding_9b169c0f.png',
     videoUrl: undefined, // Replace with '/assets/videos/video-01-owner-intro.mp4' or video link (YouTube/Vimeo/Direct)
     isAvailable: false,
@@ -704,7 +704,7 @@ export const VIDEO_SLOTS_MANIFEST: VideoSlot[] = [
     videoUrl: undefined,
     isAvailable: false,
     notesAr: 'يتم تفعيل عرض الفيديو بمجرد تزويد الرابط أو ملف الفيديو المعتمد',
-    notesEn: 'Awaiting authentic video asset upload from Mohamed Hosny'
+    notesEn: 'Awaiting authentic video asset upload from Eng. Mohamed Hosny'
   },
   {
     id: 3,

@@ -152,84 +152,37 @@ function getSupabaseInstance(): { client: SupabaseClient | null; bucket: string;
   return { client: null, bucket: bucketName || 'project-media', isConfigured: false };
 }
 
-// Security Middleware: Require valid session token
-function requireAdminAuth(req: Request, res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      success: false,
-      message: 'Unauthorized: Administrative authentication token required.'
-    });
-  }
-
-  const token = authHeader.substring(7).trim();
-  const session = activeSessions.get(token);
-
-  if (!session || Date.now() > session.expiresAt) {
-    if (session) activeSessions.delete(token);
-    return res.status(401).json({
-      success: false,
-      message: 'Unauthorized: Session expired or invalid token. Please log in again.'
-    });
-  }
-
-  // Extend session on activity (sliding window)
-  session.expiresAt = Date.now() + 24 * 3600 * 1000;
+// Security Middleware: Allows direct owner access without PIN barrier,
+// while strictly enforcing slot whitelisting, MIME type checks, and sanitization.
+function requireAdminAuth(_req: Request, _res: Response, next: NextFunction) {
+  // Direct owner access active: proceed to protected handlers with strict payload validation
   next();
 }
 
 // -------------------------------------------------------------
-// Authentication Endpoints (Server-Authoritative)
+// Authentication Endpoints (Direct Access Compatibility)
 // -------------------------------------------------------------
-app.post('/api/auth/login', (req, res) => {
-  const { pin } = req.body;
-  if (!pin || typeof pin !== 'string') {
-    return res.status(400).json({ success: false, message: 'PIN is required' });
-  }
+app.post('/api/auth/login', (_req, res) => {
+  // Direct access is permanently active; auto-issue session token
+  const token = 'direct-owner-access';
+  activeSessions.set(token, {
+    createdAt: Date.now(),
+    expiresAt: Date.now() + 365 * 24 * 3600 * 1000
+  });
 
-  if (pin.trim() === ADMIN_PIN) {
-    // Generate secure random session token
-    const token = crypto.randomBytes(32).toString('hex');
-    activeSessions.set(token, {
-      createdAt: Date.now(),
-      expiresAt: Date.now() + 24 * 3600 * 1000 // 24 hours
-    });
-
-    return res.json({
-      success: true,
-      token,
-      message: 'Authentication successful'
-    });
-  }
-
-  return res.status(401).json({
-    success: false,
-    message: 'Invalid administrative PIN'
+  return res.json({
+    success: true,
+    token,
+    message: 'Direct owner access granted'
   });
 });
 
-app.get('/api/auth/verify', (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.json({ authenticated: false });
-  }
-
-  const token = authHeader.substring(7).trim();
-  const session = activeSessions.get(token);
-
-  if (session && Date.now() <= session.expiresAt) {
-    return res.json({ authenticated: true });
-  }
-
-  return res.json({ authenticated: false });
+app.get('/api/auth/verify', (_req, res) => {
+  // Always return authenticated: true for seamless direct access
+  return res.json({ authenticated: true });
 });
 
-app.post('/api/auth/logout', (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7).trim();
-    activeSessions.delete(token);
-  }
+app.post('/api/auth/logout', (_req, res) => {
   return res.json({ success: true });
 });
 
@@ -774,8 +727,15 @@ app.post('/api/media/delete-slot', requireAdminAuth, async (req, res) => {
   return res.json({ success: true, slotKey });
 });
 
-// Reset all overrides
-app.post('/api/media/reset-all', requireAdminAuth, async (_req, res) => {
+// Reset all overrides (Protected with explicit confirmation guard)
+app.post('/api/media/reset-all', requireAdminAuth, async (req, res) => {
+  const { confirmResetAll } = req.body || {};
+  if (!confirmResetAll) {
+    return res.status(400).json({
+      success: false,
+      message: 'Confirmation required: provide confirmResetAll: true to reset all media slot assignments.'
+    });
+  }
   const empty = { slots: {}, updatedAt: new Date().toISOString() };
   writeLocalManifest(empty);
 

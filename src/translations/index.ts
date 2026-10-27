@@ -27,9 +27,9 @@ export const translations = {
 
     // Meet Owner Video (Directly Below Hero)
     ownerSectionKicker: 'الفيديو التعريفي الرئيسي',
-    ownerSectionTitle: 'تعرّف على محمد حسني',
+    ownerSectionTitle: 'تعرّف على المهندس محمد حسني',
     ownerIntroParagraph: 'مرحباً بكم. نؤمن في مؤسستنا بأن جودة التشطيب تبدأ من التأسيس الصحيح والمصارحة الكاملة مع العميل. لا نعتمد على الوعود الوهمية أو المواد غير المعتمدة، بل نضع بين يديك منهجية هندسية واضحة من أول معاينة ميدانية حتى تسليم المفتاح النهائي بأعلى معايير الإتقان.',
-    ownerVideoPlaceholderText: 'خانة الفيديو التعريفي لمحمد حسني (مخصصة للرفع الفعلي)',
+    ownerVideoPlaceholderText: 'خانة الفيديو التعريفي للمهندس محمد حسني (مخصصة للرفع الفعلي)',
     ownerVideoInstruction: 'يتم تشغيل الفيديو الرسمي بمجرد إرفاق الملف المرئي المعتمد من قبل الإدارة.',
     playVideo: 'تشغيل الفيديو التعريفي',
 
@@ -81,14 +81,14 @@ export const translations = {
 
     // Process
     processKicker: 'وضوح وشفافية من اليوم الأول',
-    processTitle: 'خطوات العمل مع مؤسسة محمد حسني',
+    processTitle: 'خطوات العمل مع مؤسسة المهندس محمد حسني',
     processSubtitle: 'نلتزم بمنهجية محددة تبدأ من التواصل عبر واتساب والمعاينة الفاحصة وتنتهي بتسليم المفتاح دون مفاجآت.',
     processDisclaimer: 'ملاحظة: الخطوات التنفيذية الدقيقة والجدول الزمني يتم تفصيلها وفقاً للحالة الإنشائية للموقع ونطاق الأعمال المعتمد.',
 
     // About
     aboutKicker: 'رؤيتنا المعمارية',
-    aboutTitle: 'عن مؤسسة محمد حسني للتشطيبات',
-    aboutParagraph1: 'تأسست مؤسسة محمد حسني برؤية هندسية واضحة تركز على متانة التأسيس وفخامة التشطيب. ندرك أن تشطيب منزلك أو مقرك التجاري هو استثمار طويل الأمد يتطلب شفافية كاملة في الخامات، التزاماً صارماً بالمواعيد، وحرفية فنية لا تقبل التنازل.',
+    aboutTitle: 'عن مؤسسة المهندس محمد حسني للتشطيبات',
+    aboutParagraph1: 'تأسست مؤسسة المهندس محمد حسني برؤية هندسية واضحة تركز على متانة التأسيس وفخامة التشطيب. ندرك أن تشطيب منزلك أو مقرك التجاري هو استثمار طويل الأمد يتطلب شفافية كاملة في الخامات، التزاماً صارماً بالمواعيد، وحرفية فنية لا تقبل التنازل.',
     aboutParagraph2: 'نحرص على الإشراف المستمر في موقع العمل واختبار كل مرحلة — من ضغط خطوط السباكة وشبكات الكهرباء إلى استواء المحارة وتناسق الديكورات — لنضمن لك راحة البال التامة وتسليماً هندسياً مطابقاً لأعلى المواصفات القياسية.',
     valuesTitle: 'ركائز العمل الأساسية',
     value1Title: 'ثقة ومصداقية',
@@ -116,14 +116,14 @@ export const translations = {
     paymentPolicyNotice: 'بعد التواصل عبر واتساب، يتم تزويدكم يدوياً ببيانات التحويل عبر InstaPay أو Vodafone Cash للتحقق من الرسوم وتأكيد الموعد.',
 
     // Footer
-    footerDesc: 'مؤسسة محمد حسني للتشطيبات المعمارية والتصميم الداخلي — تنفيذ عالي الجودة لكافة مراحل التشطيب السكني والتجاري في القاهرة ومصر.',
+    footerDesc: 'مؤسسة المهندس محمد حسني للتشطيبات المعمارية والتصميم الداخلي — تنفيذ عالي الجودة لكافة مراحل التشطيب السكني والتجاري في القاهرة ومصر.',
     footerQuickLinks: 'روابط سريعة',
     footerServices: 'التخصصات الرئيسية',
     footerPolicies: 'السياسات والضوابط',
     policySiteVisit: 'شروط وسياسة رسوم المعاينة (600 ج.م)',
     policyRefund: 'سياسة الإلغاء والاسترداد',
     policyPrivacy: 'سياسة الخصوصية وسرية البيانات',
-    copyrightNotice: 'جميع الحقوق محفوظة لمؤسسة محمد حسني للتشطيبات والمعمار © 2026',
+    copyrightNotice: 'جميع الحقوق محفوظة لمؤسسة المهندس محمد حسني للتشطيبات والمعمار © 2026',
     adminWhatsAppConfig: 'إعداد رقم الواتساب الرسمي',
     mediaSlotsBtn: 'دليل خانات الصور والفيديوهات (50 خانة)',
     mediaSlotsDesc: 'استعراض أسماء الـ 45 خانة للصور والـ 5 خانات للفيديوهات ومساراتها',
@@ -135,13 +135,13 @@ export const translations = {
     engSectionTitle: 'المهندس محمد حسني',
     engSectionSubtitle: 'قيادة هندسية ميدانية وإشراف فني مباشر يضمن دقة التنفيذ ومطابقة المواصفات القياسية المصرية والدولية.',
     engBio1: 'يقود المهندس محمد حسني كافة مشاريع التشطيب المعماري والتصميم الداخلي بالمؤسسة، انطلاقاً من مبدأ راسخ بأن الجودة الحقيقية تبدأ من التأسيس الهندسي الصحيح، والحسابات الإنشائية والكهربائية الدقيقة، وليست مجرد تشطيبات شكلية.',
-    engBio2: 'يخضع كل موقع لمعاينة هندسية ميدانية يترأسها م. محمد حسني شخصياً، مع وضع تقارير فنية للشيرب والمناسيب ومسارات السباكة وتوزيع الأحمال الكهربائية، ومتابعة تنفيذ البنود خطوة بخطوة بالليزر حتى تسليم المفتاح.',
+    engBio2: 'يخضع كل موقع لمعاينة هندسية ميدانية يترأسها المهندس محمد حسني شخصياً، مع وضع تقارير فنية للشيرب والمناسيب ومسارات السباكة وتوزيع الأحمال الكهربائية، ومتابعة تنفيذ البنود خطوة بخطوة بالليزر حتى تسليم المفتاح.',
     engDegreeTitle: 'المؤهل والاعتماد الهندسي الرسمي',
     engDegreeSubtitle: 'الوثيقة الهندسية المعتمدة — المهندس محمد حسني',
     engDegreeAwaitingNotice: 'الخانة مجهزة لعرض شهادة المؤهل الهندسي الرسمية والاعتمادات المهنية للمهندس محمد حسني فور إدراج الملف من الإدارة.',
     engDegreeTargetPathNotice: 'المسار المخصص لحفظ صورة الشهادة في المستودع:',
     engDegreeInspectBtn: 'تكبير وفحص الشهادة الهندسية',
-    engConsultCta: 'استشارة هندسية مع م. محمد حسني عبر واتساب',
+    engConsultCta: 'استشارة هندسية مع المهندس محمد حسني عبر واتساب',
     engPillar1Title: 'معاينة وفحص هندسي',
     engPillar1Desc: 'رفع مساحي دقيق للموقع وكشف عيوب الخرسانات والتأسيسات قبل بدء أي بند.',
     engPillar2Title: 'إشراف فني غير منقطع',
@@ -177,9 +177,9 @@ export const translations = {
 
     // Meet Owner Video (Directly Below Hero)
     ownerSectionKicker: 'Founder Introduction',
-    ownerSectionTitle: 'Meet Mohamed Hosny',
+    ownerSectionTitle: 'Meet Eng. Mohamed Hosny',
     ownerIntroParagraph: 'Welcome. At our firm, we believe enduring architectural quality begins with honest site evaluation, sound rough-in engineering, and absolute transparency with clients. We never rely on empty promises or uncertified materials; instead, we offer a structured engineering workflow from the initial on-site inspection through to turnkey delivery.',
-    ownerVideoPlaceholderText: 'Mohamed Hosny Official Introduction Slot (Awaiting Upload)',
+    ownerVideoPlaceholderText: 'Eng. Mohamed Hosny Official Introduction Slot (Awaiting Upload)',
     ownerVideoInstruction: 'The official presentation video will activate once uploaded and approved by management.',
     playVideo: 'Play Introduction Video',
 
@@ -231,14 +231,14 @@ export const translations = {
 
     // Process
     processKicker: 'Transparency from Day One',
-    processTitle: 'How We Work Together',
+    processTitle: 'Working with Eng. Mohamed Hosny Construction',
     processSubtitle: 'A structured seven-step journey initiated via direct WhatsApp consultation to pristine key handover with zero hidden surprises.',
     processDisclaimer: 'Note: Specific execution schedules and milestones are tailored to the physical site condition and agreed scope.',
 
     // About
     aboutKicker: 'Our Philosophy',
-    aboutTitle: 'About Mohamed Hosny Construction',
-    aboutParagraph1: 'Mohamed Hosny Construction & Interior Design was built on an architectural ethos prioritizing fundamental engineering integrity alongside aesthetic refinement. We recognize that finishing your residence or commercial headquarters is an enduring investment that demands total material transparency, strict scheduling discipline, and uncompromising craftsmanship.',
+    aboutTitle: 'About Eng. Mohamed Hosny Construction',
+    aboutParagraph1: 'Eng. Mohamed Hosny Construction & Interior Design was built on an architectural ethos prioritizing fundamental engineering integrity alongside aesthetic refinement. We recognize that finishing your residence or commercial headquarters is an enduring investment that demands total material transparency, strict scheduling discipline, and uncompromising craftsmanship.',
     aboutParagraph2: 'Our team maintains continuous on-site supervision and rigorous testing at every phase — from hydrostatic plumbing tests and load-balanced electrical distribution to laser-straight plastering and harmonized finishes — ensuring peace of mind and code-compliant delivery.',
     valuesTitle: 'Our Operating Pillars',
     value1Title: 'Integrity & Trust',
@@ -266,14 +266,14 @@ export const translations = {
     paymentPolicyNotice: 'Following WhatsApp inquiry, transfer details (InstaPay or Vodafone Cash) are shared directly to reconcile the fee and lock in the appointment.',
 
     // Footer
-    footerDesc: 'Mohamed Hosny — Construction & Interior Design. High-craftsmanship residential and commercial architectural finishing across Cairo and Egypt.',
+    footerDesc: 'Eng. Mohamed Hosny — Construction & Interior Design. High-craftsmanship residential and commercial architectural finishing across Cairo and Egypt.',
     footerQuickLinks: 'Navigation',
     footerServices: 'Specializations',
     footerPolicies: 'Policies & Standards',
     policySiteVisit: 'Site Visit Fee Policy (600 EGP)',
     policyRefund: 'Cancellation & Refund Terms',
     policyPrivacy: 'Privacy & Data Protection',
-    copyrightNotice: 'All Rights Reserved. Mohamed Hosny Construction & Interior Design © 2026',
+    copyrightNotice: 'All Rights Reserved. Eng. Mohamed Hosny Construction & Interior Design © 2026',
     adminWhatsAppConfig: 'Set Official WhatsApp Number',
     mediaSlotsBtn: 'Media Slots Directory (50 Slots)',
     mediaSlotsDesc: 'View all 45 photo slots and 5 video slots with target paths',

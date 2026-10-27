@@ -119,7 +119,7 @@ export const MeetOwnerSection: React.FC<MeetOwnerSectionProps> = ({
 
               <div className="pt-6 mt-6 border-t border-[#F7F5F0]/10">
                 <button
-                  onClick={() => onOpenWhatsApp(currentLang === 'ar' ? 'استشارة تشطيب مع محمد حسني' : 'Finishing Consultation with Mohamed Hosny')}
+                  onClick={() => onOpenWhatsApp(currentLang === 'ar' ? 'استشارة تشطيب مع المهندس محمد حسني' : 'Finishing Consultation with Eng. Mohamed Hosny')}
                   className="w-full py-3 px-4 text-xs font-bold tracking-wider uppercase bg-[#D1B995] hover:bg-[#E5D1B0] text-[#1F4A3B] transition-colors rounded-sm text-center flex items-center justify-center gap-2 cursor-pointer shadow-md"
                 >
                   <MessageCircle className="w-4 h-4 fill-current/20" />
