@@ -75,6 +75,9 @@ export const Footer: React.FC<FooterProps> = ({
                 <a href="#videos" className="hover:text-[#D1B995] transition-colors">{t.navVideos}</a>
               </li>
               <li>
+                <a href="#inbox-gallery" className="hover:text-[#D1B995] transition-colors">{t.navInboxGallery}</a>
+              </li>
+              <li>
                 <a href="#process" className="hover:text-[#D1B995] transition-colors">{t.navProcess}</a>
               </li>
               <li>

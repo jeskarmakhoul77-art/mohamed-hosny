@@ -20,6 +20,7 @@ import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { MeetOwnerSection } from './components/MeetOwnerSection';
 import { ApartmentCaseStudy } from './components/ApartmentCaseStudy';
+import { InboxGallerySection } from './components/InboxGallerySection';
 import { PortfolioSection } from './components/PortfolioSection';
 import { VideoLibrary } from './components/VideoLibrary';
 import { ServicesSection } from './components/ServicesSection';
@@ -181,7 +182,7 @@ export default function App() {
           onSelectImage={handleOpenImageModal}
         />
 
-        {/* 6. Main Portfolio — Exactly 40 Designated Image Slots across 8 Categories */}
+        {/* 6. Primary Client Portfolio — Exactly 40 Designated Image Slots across 8 Categories */}
         <PortfolioSection
           currentLang={currentLang}
           slots={portfolioSlots}
@@ -193,6 +194,13 @@ export default function App() {
           currentLang={currentLang}
           videoSlots={videoSlots}
           onOpenBooking={() => handleOpenWhatsApp(currentLang === 'ar' ? 'فيديوهات المشاريع والمعاينة' : 'Project Video Inquiry')}
+        />
+
+        {/* 8. Field Archive & Review Gallery — 62 Original On-Site Photos (Separate Staging Repository) */}
+        <InboxGallerySection
+          currentLang={currentLang}
+          onOpenWhatsApp={handleOpenWhatsApp}
+          onSelectImage={handleOpenImageModal}
         />
 
         {/* 8. Project Process (7 Sequential Stages) */}

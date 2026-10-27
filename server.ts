@@ -370,6 +370,56 @@ app.get('/api/media/manifest', async (_req, res) => {
 });
 
 // -------------------------------------------------------------
+// Inbox Original Media Discovery Endpoint
+// -------------------------------------------------------------
+app.get('/api/media/inbox', (_req, res) => {
+  try {
+    const inboxPath = path.resolve(__dirname, 'public', 'assets', 'inbox');
+    if (!fs.existsSync(inboxPath)) {
+      return res.json({ success: true, total: 0, files: [] });
+    }
+
+    const fileNames = fs.readdirSync(inboxPath).filter((f) => f !== '.gitkeep' && !f.startsWith('.'));
+    const files = fileNames.map((fileName, idx) => {
+      const filePath = path.join(inboxPath, fileName);
+      const stat = fs.statSync(filePath);
+      let category = 'site';
+      if (fileName.startsWith('Screenshot_')) {
+        category = 'screenshot';
+      } else if (fileName.startsWith('Gemini_')) {
+        category = 'concept';
+      }
+
+      let dateFormatted = '2026-10';
+      const match = fileName.match(/2026\d{4}/);
+      if (match) {
+        const raw = match[0];
+        dateFormatted = `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
+      }
+
+      return {
+        id: idx + 1,
+        fileName,
+        url: `/assets/inbox/${encodeURIComponent(fileName)}`,
+        sizeBytes: stat.size,
+        sizeKb: (stat.size / 1024).toFixed(1),
+        category,
+        dateFormatted
+      };
+    });
+
+    return res.json({
+      success: true,
+      total: files.length,
+      files
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
+// -------------------------------------------------------------
 // Direct Signed Upload URL (Bypasses Vercel 4.5MB request limit for large videos)
 // -------------------------------------------------------------
 // Direct Signed Upload URL (Bypasses Vercel 4.5MB request limit for large videos)

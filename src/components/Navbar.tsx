@@ -25,6 +25,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { href: '#apartment-case-study', label: t.navApartment },
     { href: '#portfolio', label: t.navPortfolio },
     { href: '#videos', label: t.navVideos },
+    { href: '#inbox-gallery', label: t.navInboxGallery },
     { href: '#process', label: t.navProcess },
     { href: '#about', label: t.navAbout },
   ];

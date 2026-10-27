@@ -71,9 +71,15 @@ export const PortfolioSection: React.FC<PortfolioSectionProps> = ({
             </p>
           </div>
 
-          <div className="hidden md:flex items-center gap-2 font-mono text-[11px] text-[#1F4A3B] bg-white px-3.5 py-2 rounded-xs border border-[#D1B995]/30">
-            <FolderOpen className="w-3.5 h-3.5 text-[#B89B6A]" />
-            <span>public/assets/projects/{'{category}'}/{'{slotKey}'}.jpg</span>
+          <div className="shrink-0 flex flex-wrap items-center gap-3">
+            <div className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#1F4A3B] text-[#D1B995] border border-[#D1B995]/40 rounded-sm text-xs font-semibold shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-[#D1B995]" />
+              <span>{t.portfolioPrimaryBadge}</span>
+            </div>
+            <div className="hidden lg:flex items-center gap-2 font-mono text-[11px] text-[#1F4A3B] bg-white px-3.5 py-2 rounded-xs border border-[#D1B995]/30">
+              <FolderOpen className="w-3.5 h-3.5 text-[#B89B6A]" />
+              <span>public/assets/projects/{'{category}'}/{'{slotKey}'}.jpg</span>
+            </div>
           </div>
         </div>
 
