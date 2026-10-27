@@ -152,38 +152,130 @@ function getSupabaseInstance(): { client: SupabaseClient | null; bucket: string;
   return { client: null, bucket: bucketName || 'project-media', isConfigured: false };
 }
 
-// Security Middleware: Allows direct owner access without PIN barrier,
-// while strictly enforcing slot whitelisting, MIME type checks, and sanitization.
-function requireAdminAuth(_req: Request, _res: Response, next: NextFunction) {
-  // Direct owner access active: proceed to protected handlers with strict payload validation
+// Rate limiting for admin login attempts (prevents brute force)
+const loginAttempts = new Map<string, { attempts: number; blockedUntil: number }>();
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const record = loginAttempts.get(ip);
+  if (record && now < record.blockedUntil) {
+    return false;
+  }
+  return true;
+}
+
+function recordLoginAttempt(ip: string, success: boolean) {
+  const now = Date.now();
+  const record = loginAttempts.get(ip) || { attempts: 0, blockedUntil: 0 };
+  if (success) {
+    loginAttempts.delete(ip);
+  } else {
+    record.attempts += 1;
+    if (record.attempts >= 5) {
+      record.blockedUntil = now + 15 * 60 * 1000; // 15-minute temporary lockout after 5 consecutive failures
+    }
+    loginAttempts.set(ip, record);
+  }
+}
+
+// Timing-safe PIN verification against server-side secret
+function verifyAdminPin(inputPin: string): boolean {
+  if (!inputPin || typeof inputPin !== 'string') return false;
+  const hashInput = crypto.createHash('sha256').update(inputPin.trim()).digest();
+  const hashTarget = crypto.createHash('sha256').update(ADMIN_PIN.trim()).digest();
+  return crypto.timingSafeEqual(hashInput, hashTarget);
+}
+
+// Security Middleware: Strictly requires a valid active administrative session token
+function requireAdminAuth(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      success: false,
+      message: 'Unauthorized: Valid administrative session token required.'
+    });
+  }
+
+  const token = authHeader.substring(7).trim();
+  const session = activeSessions.get(token);
+
+  if (!session || Date.now() > session.expiresAt) {
+    if (session) activeSessions.delete(token);
+    return res.status(401).json({
+      success: false,
+      message: 'Unauthorized: Session expired or invalid token. Please authenticate.'
+    });
+  }
+
+  // Extend session on activity (sliding window of 24 hours)
+  session.expiresAt = Date.now() + 24 * 3600 * 1000;
   next();
 }
 
 // -------------------------------------------------------------
-// Authentication Endpoints (Direct Access Compatibility)
+// Authentication Endpoints (Server-Authoritative)
 // -------------------------------------------------------------
-app.post('/api/auth/login', (_req, res) => {
-  // Direct access is permanently active; auto-issue session token
-  const token = 'direct-owner-access';
-  activeSessions.set(token, {
-    createdAt: Date.now(),
-    expiresAt: Date.now() + 365 * 24 * 3600 * 1000
-  });
+app.post('/api/auth/login', (req, res) => {
+  const ip = req.ip || req.socket.remoteAddress || 'unknown';
+  if (!checkRateLimit(ip)) {
+    return res.status(429).json({
+      success: false,
+      message: 'Too many failed login attempts. Please wait 15 minutes before trying again.'
+    });
+  }
 
-  return res.json({
-    success: true,
-    token,
-    message: 'Direct owner access granted'
+  const { pin } = req.body || {};
+  if (!pin || typeof pin !== 'string') {
+    return res.status(400).json({ success: false, message: 'PIN is required' });
+  }
+
+  if (verifyAdminPin(pin)) {
+    recordLoginAttempt(ip, true);
+
+    // Generate cryptographically secure random session token (256-bit entropy)
+    const token = crypto.randomBytes(32).toString('hex');
+    activeSessions.set(token, {
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 24 * 3600 * 1000 // 24-hour validity
+    });
+
+    return res.json({
+      success: true,
+      token,
+      message: 'Administrative authentication successful'
+    });
+  }
+
+  recordLoginAttempt(ip, false);
+  return res.status(401).json({
+    success: false,
+    message: 'Invalid administrative PIN'
   });
 });
 
-app.get('/api/auth/verify', (_req, res) => {
-  // Always return authenticated: true for seamless direct access
-  return res.json({ authenticated: true });
+app.get('/api/auth/verify', (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.json({ authenticated: false });
+  }
+
+  const token = authHeader.substring(7).trim();
+  const session = activeSessions.get(token);
+
+  if (session && Date.now() <= session.expiresAt) {
+    return res.json({ authenticated: true });
+  }
+
+  return res.json({ authenticated: false });
 });
 
-app.post('/api/auth/logout', (_req, res) => {
-  return res.json({ success: true });
+app.post('/api/auth/logout', (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7).trim();
+    activeSessions.delete(token);
+  }
+  return res.json({ success: true, message: 'Logged out successfully' });
 });
 
 // -------------------------------------------------------------

@@ -33,8 +33,8 @@ export const EngineerProfileSection: React.FC<EngineerProfileSectionProps> = ({
       onSelectImage(
         currentLang === 'ar' ? 'المؤهل الهندسي المعتمد — المهندس محمد حسني' : 'Accredited Engineering Degree — Eng. Mohamed Hosny',
         currentLang === 'ar'
-          ? 'شهادة المؤهل الهندسي والاعتماد المهني للمهندس محمد حسني المشرف العام على مشاريع المؤسسة.'
-          : 'Official engineering qualification and credentials for Eng. Mohamed Hosny, lead engineer.',
+          ? 'شهادة المؤهل الهندسي والاعتماد المهني للمهندس محمد حسني.'
+          : 'Official engineering qualification and credentials for Eng. Mohamed Hosny.',
         certificatePath
       );
     }
@@ -70,7 +70,7 @@ export const EngineerProfileSection: React.FC<EngineerProfileSectionProps> = ({
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-[#1F4A3B]">
-                    {currentLang === 'ar' ? 'المهندس محمد حسني — المشرف العام والمدير التنفيذي' : 'Eng. Mohamed Hosny — Lead Project Engineer'}
+                    {currentLang === 'ar' ? 'المهندس محمد حسني' : 'Eng. Mohamed Hosny'}
                   </h3>
                   <p className="text-xs text-[#B89B6A] font-medium">
                     {currentLang === 'ar' ? 'إشراف ميداني هندسي مباشر على كافة مراحل العمل' : 'Direct on-site engineering supervision across all phases'}

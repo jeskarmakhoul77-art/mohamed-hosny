@@ -198,14 +198,45 @@ export function setAdminAuthToken(token: string | null): void {
   }
 }
 
-export async function loginAdmin(_pin?: string): Promise<{ success: boolean; message?: string }> {
-  setAdminAuthToken('direct-owner-access');
-  return { success: true };
+export async function loginAdmin(pin: string): Promise<{ success: boolean; message?: string }> {
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin })
+    });
+    const data = await res.json();
+    if (res.ok && data.success && data.token) {
+      setAdminAuthToken(data.token);
+      return { success: true };
+    }
+    return { success: false, message: data.message || 'Invalid administrative PIN' };
+  } catch (err: any) {
+    return { success: false, message: err.message || 'Network error during authentication' };
+  }
 }
 
 export async function checkAdminAuth(): Promise<boolean> {
-  // Direct owner access is active without PIN requirement
-  return true;
+  const token = getAdminAuthToken();
+  if (!token) return false;
+
+  try {
+    const res = await fetch('/api/auth/verify', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      setAdminAuthToken(null);
+      return false;
+    }
+    const data = await res.json();
+    if (!data.authenticated) {
+      setAdminAuthToken(null);
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function logoutAdmin(): Promise<void> {

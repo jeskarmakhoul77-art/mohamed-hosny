@@ -15,6 +15,10 @@ import {
   saveLocalApartmentStages,
   saveLocalPortfolioSlots,
   saveLocalVideoSlots,
+  loginAdmin,
+  logoutAdmin,
+  checkAdminAuth,
+  getAdminAuthToken,
   fetchSupabaseStatus,
   saveSupabaseSettings
 } from '../../services/mediaStorage';
@@ -32,6 +36,8 @@ import {
   FileCheck,
   AlertTriangle,
   Lock,
+  Unlock,
+  KeyRound,
   Layers,
   Search,
   ExternalLink,
@@ -72,8 +78,11 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
   videoSlots,
   onRefreshData
 }) => {
-  // Authentication State: Direct Owner Access (Password prompt removed)
-  const [isAuthenticated] = useState<boolean>(true);
+  // Authentication State (Server-Authoritative)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => !!getAdminAuthToken());
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [isVerifyingPin, setIsVerifyingPin] = useState(false);
 
   // Tabs
   const [activeTab, setActiveTab] = useState<'images' | 'bulk' | 'videos' | 'settings'>('images');
@@ -132,12 +141,45 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
   const videoFileInputRef = useRef<HTMLInputElement>(null);
   const [targetVideoForUpload, setTargetVideoForUpload] = useState<string | null>(null);
 
-  // Refresh Supabase status on open
+  // Refresh auth and Supabase status on open
   useEffect(() => {
     if (isOpen) {
+      checkAdminAuth().then((authed) => {
+        setIsAuthenticated(authed);
+      });
       refreshSupabaseStatus();
     }
   }, [isOpen]);
+
+  const handlePinSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pinInput.trim() || isVerifyingPin) return;
+
+    setIsVerifyingPin(true);
+    setPinError(null);
+
+    const res = await loginAdmin(pinInput);
+    setIsVerifyingPin(false);
+
+    if (res.success) {
+      setIsAuthenticated(true);
+      setPinError(null);
+      setPinInput('');
+      refreshSupabaseStatus();
+    } else {
+      setPinError(
+        res.message ||
+        (currentLang === 'ar'
+          ? 'الرمز السري غير صحيح. يرجى التحقق والمحاولة مجدداً.'
+          : 'Invalid administrative PIN. Please verify and try again.')
+      );
+    }
+  };
+
+  const handleLogout = async () => {
+    await logoutAdmin();
+    setIsAuthenticated(false);
+  };
 
   const refreshSupabaseStatus = async () => {
     setIsLoadingSupabaseStatus(true);
@@ -262,7 +304,13 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
       }, 300);
     } catch (err: any) {
       console.error('Failed to upload file:', err);
-      alert(`Upload error: ${err.message}`);
+      const isAuthError = err.message && (err.message.includes('401') || err.message.toLowerCase().includes('unauthorized') || err.message.includes('مصرح'));
+      if (isAuthError) {
+        setIsAuthenticated(false);
+        alert(currentLang === 'ar' ? 'انتهت صلاحية جلسة الإدارة أو غير مصرح بها. يرجى إدخال رمز الإدارة مجددًا.' : 'Admin session expired or unauthorized. Please enter the admin PIN again.');
+      } else {
+        alert(`Upload error: ${err.message}`);
+      }
       setUploadingSlotKey(null);
       setUploadProgress(0);
       setTargetSlotForUpload(null);
@@ -484,7 +532,14 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
         onRefreshData();
       }, 300);
     } catch (err: any) {
-      alert(`Video upload failed: ${err.message}`);
+      console.error('Failed to upload video:', err);
+      const isAuthError = err.message && (err.message.includes('401') || err.message.toLowerCase().includes('unauthorized') || err.message.includes('مصرح'));
+      if (isAuthError) {
+        setIsAuthenticated(false);
+        alert(currentLang === 'ar' ? 'انتهت صلاحية جلسة الإدارة أو غير مصرح بها. يرجى إدخال رمز الإدارة مجددًا.' : 'Admin session expired or unauthorized. Please enter the admin PIN again.');
+      } else {
+        alert(`Video upload failed: ${err.message}`);
+      }
       setUploadingSlotKey(null);
       setUploadProgress(0);
       setTargetVideoForUpload(null);
@@ -500,9 +555,19 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
           : 'Warning: Are you sure you want to delete all uploaded overrides and restore defaults?'
       )
     ) {
-      await resetAllSlotsOnServer();
-      resetAllMediaOverrides();
-      onRefreshData();
+      try {
+        await resetAllSlotsOnServer();
+        resetAllMediaOverrides();
+        onRefreshData();
+      } catch (err: any) {
+        const isAuthError = err.message && (err.message.includes('401') || err.message.toLowerCase().includes('unauthorized') || err.message.includes('مصرح'));
+        if (isAuthError) {
+          setIsAuthenticated(false);
+          alert(currentLang === 'ar' ? 'انتهت صلاحية جلسة الإدارة أو غير مصرح بها. يرجى إدخال رمز الإدارة مجددًا.' : 'Admin session expired or unauthorized. Please enter the admin PIN again.');
+        } else {
+          alert(`Reset error: ${err.message}`);
+        }
+      }
     }
   };
 
@@ -686,10 +751,27 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-medium bg-[#1F4A3B] border border-[#D1B995]/40 text-[#D1B995] rounded-sm">
-              <Check className="w-3 h-3 text-[#D1B995]" />
-              <span>{currentLang === 'ar' ? 'وصول مباشر مفعل' : 'Direct Owner Access'}</span>
-            </span>
+            {isAuthenticated ? (
+              <>
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium bg-[#1F4A3B] border border-emerald-500/40 text-emerald-300 rounded-sm">
+                  <Check className="w-3 h-3 text-emerald-400" />
+                  <span>{currentLang === 'ar' ? 'جلسة إدارة نشطة' : 'Admin Session Active'}</span>
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white/10 hover:bg-white/20 text-[#F7F5F0] rounded-sm transition-colors cursor-pointer"
+                  title={currentLang === 'ar' ? 'قفل الجلسة' : 'Lock session'}
+                >
+                  <Lock className="w-3.5 h-3.5 text-[#D1B995]" />
+                  <span>{currentLang === 'ar' ? 'قفل اللوحة' : 'Lock'}</span>
+                </button>
+              </>
+            ) : (
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium bg-[#1F4A3B] border border-[#D1B995]/40 text-[#D1B995] rounded-sm">
+                <Lock className="w-3 h-3 text-[#D1B995]" />
+                <span>{currentLang === 'ar' ? 'يتطلب تصريحاً' : 'Protected'}</span>
+              </span>
+            )}
             <button
               onClick={onClose}
               className="p-1.5 text-[#F7F5F0]/70 hover:text-white rounded-sm cursor-pointer hover:bg-white/10"
@@ -700,8 +782,64 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
           </div>
         </div>
 
-        {/* DIRECT DASHBOARD VIEW */}
-        <div className="flex flex-col flex-1 overflow-hidden">
+        {/* AUTHENTICATION VIEW IF NOT SIGNED IN */}
+        {!isAuthenticated ? (
+          <div className="p-8 sm:p-14 flex flex-col items-center justify-center text-center max-w-md mx-auto my-auto">
+            <div className="w-14 h-14 rounded-full bg-[#152B24] border border-[#D1B995]/50 flex items-center justify-center text-[#D1B995] mb-4 shadow-lg">
+              <KeyRound className="w-7 h-7" />
+            </div>
+            <h3 className="text-xl font-bold text-[#1F4A3B] mb-2">
+              {currentLang === 'ar' ? 'تسجيل دخول الإدارة لإدارة الوسائط' : 'Admin Authentication Required'}
+            </h3>
+            <p className="text-xs text-[#5C5C5C] mb-6 leading-relaxed">
+              {currentLang === 'ar'
+                ? 'لحماية وسائط الموقع ومحتواه من التعديل أو الحذف من قبل الزوار المجهولين، يرجى إدخال الرمز السري للمسؤول للمتابعة.'
+                : 'To protect portfolio media from unauthorized changes or deletions, administrative authorization is required to access management tools.'}
+            </p>
+
+            <form onSubmit={handlePinSubmit} className="w-full space-y-4">
+              <div>
+                <input
+                  type="password"
+                  value={pinInput}
+                  onChange={(e) => {
+                    setPinInput(e.target.value);
+                    setPinError(null);
+                  }}
+                  placeholder={currentLang === 'ar' ? 'أدخل الرمز السري للمسؤول' : 'Enter Administrator PIN'}
+                  className={`w-full px-4 py-3 text-center tracking-widest text-base font-mono bg-white border rounded-sm outline-none transition-all ${
+                    pinError ? 'border-red-500 ring-2 ring-red-200' : 'border-[#D1B995]/50 focus:border-[#1F4A3B]'
+                  }`}
+                  autoFocus
+                />
+                {pinError && (
+                  <p className="text-xs text-red-600 mt-2 font-medium">
+                    {pinError}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={isVerifyingPin || !pinInput.trim()}
+                className="w-full py-3.5 bg-[#1F4A3B] hover:bg-[#152B24] text-[#D1B995] font-bold text-xs uppercase tracking-wider rounded-sm transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isVerifyingPin ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Unlock className="w-4 h-4" />
+                )}
+                <span>
+                  {isVerifyingPin
+                    ? (currentLang === 'ar' ? 'جارٍ التحقق...' : 'Verifying...')
+                    : (currentLang === 'ar' ? 'فتح لوحة الإدارة' : 'Unlock Dashboard')}
+                </span>
+              </button>
+            </form>
+          </div>
+        ) : (
+          /* AUTHENTICATED DASHBOARD VIEW */
+          <div className="flex flex-col flex-1 overflow-hidden">
             
             {/* Supabase Ephemeral Storage Warning Banner (if using fallback) */}
             {supabaseStatus && !supabaseStatus.connected && (
@@ -1641,6 +1779,7 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
             </div>
 
           </div>
+        )}
 
       </div>
 
