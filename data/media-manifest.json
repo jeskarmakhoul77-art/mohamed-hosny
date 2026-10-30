@@ -1,4 +1,30 @@
 {
-  "slots": {},
-  "updatedAt": "2026-10-25T02:36:23.974Z"
+  "slots": {
+    "video-01-owner-intro": {
+      "url": "/assets/videos/video-01-owner-intro.mp4",
+      "fileName": "video-01-owner-intro.mp4",
+      "updatedAt": "2026-10-29T23:50:00.000Z"
+    },
+    "video-02-client-interview": {
+      "url": "/assets/videos/client-interview.mp4",
+      "fileName": "client-interview.mp4",
+      "updatedAt": "2026-10-29T23:50:00.000Z"
+    },
+    "video-03-finishing-process": {
+      "url": "/assets/videos/video-03-finishing-process.mp4",
+      "fileName": "video-03-finishing-process.mp4",
+      "updatedAt": "2026-10-29T23:50:00.000Z"
+    },
+    "video-04-completed-apartment": {
+      "url": "/assets/videos/video-04-completed-apartment.mp4",
+      "fileName": "video-04-completed-apartment.mp4",
+      "updatedAt": "2026-10-29T23:50:00.000Z"
+    },
+    "video-05-commercial-project": {
+      "url": "/assets/videos/video-05-commercial-project.mp4",
+      "fileName": "video-05-commercial-project.mp4",
+      "updatedAt": "2026-10-29T23:50:00.000Z"
+    }
+  },
+  "updatedAt": "2026-10-29T23:50:00.000Z"
 }

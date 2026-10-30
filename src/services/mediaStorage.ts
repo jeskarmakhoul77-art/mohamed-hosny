@@ -539,7 +539,10 @@ export async function fetchAndApplyRemoteManifest(): Promise<{
   // 1. Merge Apartment Stages prioritizing permanent repository paths and cloud overrides
   const mergedApartment: ApartmentStageSlot[] = APARTMENT_STAGES_MANIFEST.map((stage) => {
     const match = slotsMap[stage.slotKey];
-    const activeUrl = match?.url || stage.imageUrl || stage.defaultFilePath;
+    let activeUrl = match?.url || stage.imageUrl || stage.defaultFilePath;
+    if (activeUrl && activeUrl.startsWith('/uploads/')) {
+      activeUrl = stage.defaultFilePath;
+    }
     return {
       ...stage,
       imageUrl: activeUrl,
@@ -551,7 +554,10 @@ export async function fetchAndApplyRemoteManifest(): Promise<{
   // 2. Merge Portfolio Slots prioritizing permanent repository paths and cloud overrides
   const mergedPortfolio: PortfolioSlot[] = PORTFOLIO_SLOTS_MANIFEST.map((slot) => {
     const match = slotsMap[slot.slotKey];
-    const activeUrl = match?.url || slot.imageUrl || slot.defaultFilePath;
+    let activeUrl = match?.url || slot.imageUrl || slot.defaultFilePath;
+    if (activeUrl && activeUrl.startsWith('/uploads/')) {
+      activeUrl = slot.defaultFilePath;
+    }
     return {
       ...slot,
       imageUrl: activeUrl,
@@ -560,17 +566,44 @@ export async function fetchAndApplyRemoteManifest(): Promise<{
   });
   saveLocalPortfolioSlots(mergedPortfolio);
 
-  // 3. Merge Video Slots prioritizing permanent repository paths and cloud overrides
+  // 3. Merge Video Slots: Only assign videoUrl if a real URL or upload exists
   const mergedVideos: VideoSlot[] = VIDEO_SLOTS_MANIFEST.map((video) => {
     const match = slotsMap[video.slotKey];
-    const activeUrl = match?.url || video.videoUrl || video.defaultFilePath;
+    let activeUrl = match?.url || video.videoUrl || undefined;
+    if (activeUrl && activeUrl.startsWith('/uploads/')) {
+      activeUrl = video.defaultFilePath;
+    }
     return {
       ...video,
       videoUrl: activeUrl,
       posterUrl: video.posterUrl,
-      isAvailable: !!activeUrl
+      isAvailable: Boolean(activeUrl && activeUrl.trim() !== '')
     };
   });
+
+  // Check for any dynamic video slots registered in slotsMap (e.g. video-06, video-07)
+  Object.keys(slotsMap).forEach((key) => {
+    if (key.startsWith('video-') && !VIDEO_SLOTS_MANIFEST.some((v) => v.slotKey === key)) {
+      const extraSlot = slotsMap[key];
+      mergedVideos.push({
+        id: mergedVideos.length + 1,
+        slotKey: key,
+        defaultFilePath: `/assets/videos/${key}.mp4`,
+        slotType: 'custom_video',
+        titleAr: extraSlot.fileName || `فيديو إضافي (${key})`,
+        titleEn: extraSlot.fileName || `Additional Video (${key})`,
+        subtitleAr: 'توثيق مرئي إضافي',
+        subtitleEn: 'Additional Video Milestone',
+        descriptionAr: 'خانة فيديو إضافية تم إنشاؤها عبر مدير المحتوى للتوسع.',
+        descriptionEn: 'Custom video slot added via content management.',
+        videoUrl: extraSlot.url,
+        isAvailable: Boolean(extraSlot.url && extraSlot.url.trim() !== ''),
+        notesAr: 'خانة فيديو مضافة قابلة للتوسع',
+        notesEn: 'Extensible video slot'
+      });
+    }
+  });
+
   saveLocalVideoSlots(mergedVideos);
 
   return {
@@ -681,7 +714,7 @@ export function getSavedVideoSlots(): VideoSlot[] {
         let activeUrl = stored?.videoUrl;
         if (activeUrl && activeUrl.startsWith('/uploads/')) {
           activeUrl = manifestSlot.defaultFilePath;
-        } else if (!activeUrl) {
+        } else if (!activeUrl || manifestSlot.slotKey === 'video-02-client-interview') {
           activeUrl = manifestSlot.videoUrl || manifestSlot.defaultFilePath;
         }
         return {

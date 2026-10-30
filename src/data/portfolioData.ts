@@ -116,8 +116,8 @@ export const WORK_PROCESS_STEPS = [
     step: '01',
     titleAr: 'طلب المعاينة والاستفسار المبدئي',
     titleEn: 'Initial Inquiry & Booking',
-    descAr: 'يقوم العميل بتقديم بيانات المشروع وحجز موعد المعاينة الهندسية وسداد رسوم المعاينة الميدانية (600 ج.م).',
-    descEn: 'Submit project details, select preferred date, and submit the 600 EGP site visit inspection fee.'
+    descAr: 'يقوم العميل بتقديم بيانات المشروع وحجز موعد المعاينة الهندسية والتنسيق المباشر عبر تطبيق واتساب.',
+    descEn: 'Submit project details, select preferred date, and coordinate the on-site engineering survey directly via WhatsApp.'
   },
   {
     step: '02',
@@ -135,10 +135,10 @@ export const WORK_PROCESS_STEPS = [
   },
   {
     step: '04',
-    titleAr: 'المقايسة والتعاقد وخصم رسوم المعاينة',
-    titleEn: 'Quotation, Contract & Fee Deduction',
-    descAr: 'تقديم مقايسة أسعار شفافة ومفصلة. عند توقيع العقد يُخصم مبلغ الـ 600 ج.م بالكامل من دفعة التعاقد.',
-    descEn: 'Transparent itemized quotation. Upon contract agreement, the 600 EGP inspection fee is 100% deducted.'
+    titleAr: 'المقايسة والتعاقد وبدء التنفيذ',
+    titleEn: 'Quotation, Contract Signing & Execution',
+    descAr: 'تقديم مقايسة أسعار شفافة ومفصلة لكافة البنود والخامات، وتوقيع العقد مع الالتزام بكافة الشروط والمواصفات.',
+    descEn: 'Transparent itemized quotation for all specifications and materials, followed by contract signing and milestone commitment.'
   },
   {
     step: '05',

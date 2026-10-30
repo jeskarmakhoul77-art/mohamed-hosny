@@ -23,9 +23,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   const navLinks = [
     { href: '#services', label: t.navServices },
     { href: '#apartment-case-study', label: t.navApartment },
-    { href: '#portfolio', label: t.navPortfolio },
-    { href: '#videos', label: t.navVideos },
     { href: '#inbox-gallery', label: t.navInboxGallery },
+    { href: '#videos', label: t.navVideos },
     { href: '#process', label: t.navProcess },
     { href: '#about', label: t.navAbout },
   ];
@@ -38,7 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <a
             href="#"
             className="flex items-center gap-3 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D1B995] rounded-sm py-1"
-            aria-label="Mohamed Hosny Home"
+            aria-label={currentLang === 'ar' ? 'مؤسسة المهندس محمد حسني' : 'Eng. Mohamed Hosny'}
           >
             <BrandLogo variant="compact" theme="dark" lang={currentLang} />
           </a>

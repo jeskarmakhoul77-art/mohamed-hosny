@@ -43,13 +43,24 @@ export const MeetOwnerSection: React.FC<MeetOwnerSectionProps> = ({
             <div className="lg:col-span-8 relative aspect-video bg-[#0D1A16] flex items-center justify-center overflow-hidden group">
               {videoSlot.videoUrl ? (
                 isPlaying ? (
-                  <iframe
-                    src={videoSlot.videoUrl}
-                    title={currentLang === 'ar' ? videoSlot.titleAr : videoSlot.titleEn}
-                    className="w-full h-full border-0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
+                  videoSlot.videoUrl.includes('.mp4') || videoSlot.videoUrl.includes('.webm') || videoSlot.videoUrl.startsWith('/assets/') ? (
+                    <video
+                      src={videoSlot.videoUrl}
+                      controls
+                      autoPlay
+                      playsInline
+                      preload="auto"
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <iframe
+                      src={videoSlot.videoUrl}
+                      title={currentLang === 'ar' ? videoSlot.titleAr : videoSlot.titleEn}
+                      className="w-full h-full border-0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  )
                 ) : (
                   <>
                     <img
@@ -112,7 +123,11 @@ export const MeetOwnerSection: React.FC<MeetOwnerSectionProps> = ({
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#D1B995] mt-1.5 shrink-0" />
-                    <span>{currentLang === 'ar' ? 'رسوم المعاينة (600 ج.م) تُخصم بالكامل عند التعاقد' : 'Inspection fee (600 EGP) is 100% credited upon contract'}</span>
+                    <span className="text-[#D1B995] font-semibold">
+                      {currentLang === 'ar'
+                        ? 'معاينة هندسية دقيقة للموقع ورفع المقاسات الإنشائية بميزان الليزر'
+                        : 'Precision laser surveying and structural dimensional verification'}
+                    </span>
                   </div>
                 </div>
               </div>

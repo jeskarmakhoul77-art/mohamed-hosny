@@ -70,11 +70,11 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
       <div className={`inline-flex items-center gap-3 ${className}`}>
         <div className="w-9 h-9 shrink-0">{MonogramSVG}</div>
         <div className="flex flex-col">
-          <span className={`text-base font-bold tracking-[0.12em] uppercase font-['Plus_Jakarta_Sans'] ${textColor} whitespace-nowrap leading-none`}>
-            MOHAMED HOSNY
+          <span className={`text-base font-bold tracking-[0.08em] uppercase font-['Plus_Jakarta_Sans'] ${textColor} whitespace-nowrap leading-none`}>
+            {lang === 'ar' ? 'المهندس محمد حسني' : 'ENG. MOHAMED HOSNY'}
           </span>
-          <span className={`text-[9px] tracking-[0.2em] uppercase font-medium mt-1 ${subtextColor} whitespace-nowrap leading-none`}>
-            {lang === 'ar' ? 'تشطيبات وتصميم داخلي' : 'CONSTRUCTION & DESIGN'}
+          <span className={`text-[9px] tracking-[0.16em] uppercase font-medium mt-1 ${subtextColor} whitespace-nowrap leading-none`}>
+            {lang === 'ar' ? 'تشطيبات معمارية وتصميم داخلي' : 'CONSTRUCTION & DESIGN'}
           </span>
         </div>
       </div>
@@ -85,11 +85,11 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
     <div className={`inline-flex items-center gap-3.5 ${className}`}>
       <div className="w-11 h-11 shrink-0 drop-shadow-sm">{MonogramSVG}</div>
       <div className="flex flex-col justify-center">
-        <span className={`text-lg font-bold tracking-[0.14em] uppercase font-['Plus_Jakarta_Sans'] ${textColor} whitespace-nowrap leading-tight`}>
-          MOHAMED HOSNY
+        <span className={`text-lg font-bold tracking-[0.1em] uppercase font-['Plus_Jakarta_Sans'] ${textColor} whitespace-nowrap leading-tight`}>
+          {lang === 'ar' ? 'المهندس محمد حسني' : 'ENG. MOHAMED HOSNY'}
         </span>
-        <span className={`text-[10px] tracking-[0.24em] uppercase font-semibold mt-0.5 ${subtextColor} whitespace-nowrap leading-none`}>
-          CONSTRUCTION & INTERIOR DESIGN
+        <span className={`text-[10px] tracking-[0.2em] uppercase font-semibold mt-0.5 ${subtextColor} whitespace-nowrap leading-none`}>
+          {lang === 'ar' ? 'للتشطيبات المعمارية والتصميم الداخلي' : 'CONSTRUCTION & INTERIOR DESIGN'}
         </span>
       </div>
     </div>

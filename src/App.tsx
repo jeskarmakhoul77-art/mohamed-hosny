@@ -21,13 +21,11 @@ import { Hero } from './components/Hero';
 import { MeetOwnerSection } from './components/MeetOwnerSection';
 import { ApartmentCaseStudy } from './components/ApartmentCaseStudy';
 import { InboxGallerySection } from './components/InboxGallerySection';
-import { PortfolioSection } from './components/PortfolioSection';
 import { VideoLibrary } from './components/VideoLibrary';
 import { ServicesSection } from './components/ServicesSection';
 import { ProjectProcess } from './components/ProjectProcess';
 import { AboutSection } from './components/AboutSection';
 import { EngineerProfileSection } from './components/EngineerProfileSection';
-import { SiteInspectionFeeSection } from './components/SiteInspectionFeeSection';
 import { Footer } from './components/Footer';
 import { WhatsAppConfigModal } from './components/WhatsAppConfigModal';
 import { MediaSlotsModal } from './components/MediaSlotsModal';
@@ -127,7 +125,7 @@ export default function App() {
   /**
    * Unified WhatsApp opener:
    * Generates a prefilled bilingual message with contextual service name and optional
-   * client fields (name, location, property type, area, current stage, and inspection fee acknowledgment).
+   * client fields (name, location, property type, area, and current stage).
    */
   const handleOpenWhatsApp = useCallback((serviceName?: string) => {
     const currentNumber = getStoredWhatsAppNumber();
@@ -182,25 +180,19 @@ export default function App() {
           onSelectImage={handleOpenImageModal}
         />
 
-        {/* 6. Primary Client Portfolio — Exactly 40 Designated Image Slots across 8 Categories */}
-        <PortfolioSection
-          currentLang={currentLang}
-          slots={portfolioSlots}
-          onOpenWhatsApp={handleOpenWhatsApp}
-        />
-
-        {/* 7. Video Library — Exactly 5 Designated Video Slots */}
-        <VideoLibrary
-          currentLang={currentLang}
-          videoSlots={videoSlots}
-          onOpenBooking={() => handleOpenWhatsApp(currentLang === 'ar' ? 'فيديوهات المشاريع والمعاينة' : 'Project Video Inquiry')}
-        />
-
-        {/* 8. Field Archive & Review Gallery — 62 Original On-Site Photos (Separate Staging Repository) */}
+        {/* 6. Original Field Photos Archive — 62 Authentic On-Site Photos (Primary Visual Archive) */}
         <InboxGallerySection
           currentLang={currentLang}
           onOpenWhatsApp={handleOpenWhatsApp}
           onSelectImage={handleOpenImageModal}
+        />
+
+        {/* 7. Video Library — Extensible Video & Content Architecture */}
+        <VideoLibrary
+          currentLang={currentLang}
+          videoSlots={videoSlots}
+          onOpenBooking={() => handleOpenWhatsApp(currentLang === 'ar' ? 'فيديوهات المشاريع والمعاينة' : 'Project Video Inquiry')}
+          onOpenMediaManager={() => setIsMediaSlotsOpen(true)}
         />
 
         {/* 8. Project Process (7 Sequential Stages) */}
@@ -214,12 +206,6 @@ export default function App() {
           currentLang={currentLang}
           onOpenWhatsApp={handleOpenWhatsApp}
           onSelectImage={handleOpenImageModal}
-        />
-
-        {/* 11. Dedicated Site Inspection Fee Section (Immediately before Footer) */}
-        <SiteInspectionFeeSection
-          currentLang={currentLang}
-          onOpenWhatsApp={handleOpenWhatsApp}
         />
       </main>
 

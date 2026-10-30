@@ -54,10 +54,10 @@ export type VideoSlotType =
   | 'commercial_project';
 
 export interface VideoSlot {
-  id: 1 | 2 | 3 | 4 | 5;
-  slotKey: string; // e.g. 'video-01-owner-intro'
-  defaultFilePath: string; // e.g. '/assets/videos/video-01-owner-intro.mp4'
-  slotType: VideoSlotType;
+  id: number;
+  slotKey: string; // e.g. 'video-02-client-interview'
+  defaultFilePath: string; // e.g. '/assets/videos/video-02-client-interview.mp4'
+  slotType: string;
   titleAr: string;
   titleEn: string;
   subtitleAr: string;
@@ -69,6 +69,21 @@ export interface VideoSlot {
   isAvailable: boolean;
   notesAr: string;
   notesEn: string;
+  isFeaturedInitial?: boolean;
+}
+
+export interface CustomContentSlot {
+  id: string;
+  titleAr: string;
+  titleEn: string;
+  category: 'video' | 'project' | 'before_after';
+  slotKey: string;
+  mediaUrl?: string;
+  beforeUrl?: string;
+  afterUrl?: string;
+  descriptionAr?: string;
+  descriptionEn?: string;
+  createdAt: string;
 }
 
 export interface BusinessConfig {

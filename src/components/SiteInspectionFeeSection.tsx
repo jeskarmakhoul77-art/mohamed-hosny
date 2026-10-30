@@ -14,24 +14,28 @@ export const SiteInspectionFeeSection: React.FC<SiteInspectionFeeSectionProps> =
   const isRtl = currentLang === 'ar';
   const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
 
-  const inspectionNotice = currentLang === 'ar'
-    ? 'رسوم المعاينة الهندسية 600 جنيه مصري، تُخصم بالكامل من تكلفة التنفيذ عند الاتفاق على تنفيذ المشروع.'
-    : 'The site inspection fee is EGP 600 and will be fully deducted from the project execution cost if the client proceeds with the project.';
+  const inspectionNoticeHeadline = currentLang === 'ar'
+    ? 'معاينة هندسية دقيقة للموقع.'
+    : 'Comprehensive On-Site Engineering Inspection.';
+
+  const inspectionNoticeBody = currentLang === 'ar'
+    ? 'رفع المقاسات الإنشائية والمعمارية وإعداد تقرير فني شامل للوحدة قبل بدء التنفيذ.'
+    : 'Accurate architectural surveying and preliminary engineering assessment for your space.';
 
   const sectionKicker = currentLang === 'ar' ? 'الشفافية الهندسية والتعاقدية' : 'Engineering Transparency & Terms';
-  const sectionTitle = currentLang === 'ar' ? 'معاينة هندسية دقيقة تخصم بالكامل من التعاقد' : 'Rigorous Site Inspection Credited Toward Your Project';
+  const sectionTitle = currentLang === 'ar' ? 'معاينة هندسية دقيقة وإشراف فني مباشر' : 'Rigorous Engineering Site Inspection & Technical Oversight';
   const ctaLabel = currentLang === 'ar' ? 'احجز موعد المعاينة عبر واتساب' : 'Book Site Inspection on WhatsApp';
 
   const benefits = currentLang === 'ar' ? [
     'رفع المقاسات الإنشائية والمعمارية بدقة متناهية بميزان الليزر',
     'فحص التأسيسات الحالية للسباكة والكهرباء وتحديد متطلبات السلامة',
     'استشارة معمارية واقتراح حلول توزيع الفراغات المثالية لنمط حياتك',
-    'خصم مبلغ الـ 600 ج.م بالكامل من أول دفعة عند الاتفاق على التنفيذ'
+    'تقديم دراسة فنية ومقايسة واضحة لكافة بنود ومواصفات المشروع'
   ] : [
     'Precise architectural laser dimensioning and structural survey',
     'Diagnostic assessment of existing MEP infrastructure and safety requirements',
     'Bespoke architectural consultation on optimal spatial flow and materials',
-    'The full 600 EGP fee is 100% credited against your project execution contract'
+    'Detailed technical quotation and itemized specification review'
   ];
 
   return (
@@ -59,13 +63,16 @@ export const SiteInspectionFeeSection: React.FC<SiteInspectionFeeSectionProps> =
                 ✓
               </div>
               <div>
-                <p className="text-base sm:text-lg font-bold text-[#F7F5F0] leading-relaxed">
-                  {inspectionNotice}
+                <p className="text-lg sm:text-xl font-bold text-[#D1B995] leading-snug">
+                  {inspectionNoticeHeadline}
                 </p>
-                <p className="text-xs sm:text-sm text-[#D1B995] mt-1.5 font-medium">
+                <p className="text-sm sm:text-base font-semibold text-[#F7F5F0] mt-1 leading-relaxed">
+                  {inspectionNoticeBody}
+                </p>
+                <p className="text-xs text-[#F7F5F0]/70 mt-2 font-normal">
                   {currentLang === 'ar'
                     ? 'نضمن لك استثماراً مضموناً في المعاينة الفنية الموثقة دون أي تكلفة إضافية عند بدء التنفيذ.'
-                    : 'A zero-risk technical assessment providing a complete documented inspection before project initiation.'}
+                    : 'A transparent engineering survey with 100% cost deduction upon contract signing.'}
                 </p>
               </div>
             </div>

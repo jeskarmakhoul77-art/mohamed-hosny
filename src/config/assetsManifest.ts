@@ -683,16 +683,16 @@ export const VIDEO_SLOTS_MANIFEST: VideoSlot[] = [
     subtitleEn: 'Company founder Eng. Mohamed Hosny introduction detailing our architectural finishing philosophy',
     descriptionAr: 'فيديو تعريفي مسجل مع المهندس محمد حسني يشرح منهجية استلام المواقع، ومراحل التنفيذ بدون مفاجآت، والالتزام الكامل بالمواصفات الهندسية.',
     descriptionEn: 'Introductory presentation by Eng. Mohamed Hosny outlining our transparent workflow, site management, and uncompromising quality standards.',
-    posterUrl: '/assets/aistudio/Luxury_Architectural_Gold_Monogram_Branding_9b169c0f.png',
-    videoUrl: undefined, // Replace with '/assets/videos/video-01-owner-intro.mp4' or video link (YouTube/Vimeo/Direct)
-    isAvailable: false,
+    posterUrl: '/assets/images/Luxury_Architectural_Gold_Monogram_Branding_9b169c0f.png',
+    videoUrl: '/assets/videos/video-01-owner-intro.mp4',
+    isAvailable: true,
     notesAr: 'هذا الفيديو هو نفسه المعروض أسفل الهيرو مباشرة (خانة الفيديو 1)',
     notesEn: 'This video slot is shared with the introduction section below the hero'
   },
   {
     id: 2,
     slotKey: 'video-02-client-interview',
-    defaultFilePath: '/assets/videos/video-02-client-interview.mp4',
+    defaultFilePath: '/assets/videos/client-interview.mp4',
     slotType: 'client_interview',
     titleAr: 'لقاء مع صاحب صالون (محمد وخالد) — تجربة تنفيذ حقيقية',
     titleEn: 'Client Interview — Mohamed & Khaled Barbershop Project',
@@ -700,11 +700,12 @@ export const VIDEO_SLOTS_MANIFEST: VideoSlot[] = [
     subtitleEn: 'Live on-site discussion with the client reviewing the finished commercial space',
     descriptionAr: 'مقابلة حقيقية داخل صالون حلاقة محمد وخالد التجاري المنفذ بواسطة المؤسسة، توضح انطباع العميل عن الجودة والتفاصيل الدقيقة.',
     descriptionEn: 'Authentic project review inside the completed Mohamed & Khaled barbershop commercial project, highlighting craftsmanship and reliability.',
-    posterUrl: '/assets/aistudio/Luxury_Green_and_Gold_Brand_Identity_Board_6a9f8110.png',
-    videoUrl: undefined,
-    isAvailable: false,
-    notesAr: 'يتم تفعيل عرض الفيديو بمجرد تزويد الرابط أو ملف الفيديو المعتمد',
-    notesEn: 'Awaiting authentic video asset upload from Eng. Mohamed Hosny'
+    posterUrl: '/assets/images/Luxury_Green_and_Gold_Brand_Identity_Board_6a9f8110.png',
+    videoUrl: '/assets/videos/client-interview.mp4',
+    isAvailable: true,
+    isFeaturedInitial: true,
+    notesAr: 'فيديو مقابلة العميل لمشروع صالون حلاقة محمد وخالد التجاري',
+    notesEn: 'Client interview documentary video for Mohamed & Khaled commercial project'
   },
   {
     id: 3,
@@ -717,11 +718,12 @@ export const VIDEO_SLOTS_MANIFEST: VideoSlot[] = [
     subtitleEn: 'Real site footage demonstrating MEP rough-in, plastering, and tiling steps',
     descriptionAr: 'توثيق ميداني لمراحل العمل المختلفة، دقة ضبط المسافات بميزان الليزر، واختبارات ضغط السباكة والكهرباء قبل إغلاق الحوائط.',
     descriptionEn: 'Documentary footage showcasing laser-guided leveling, plumbing pressure tests, and meticulous site supervision.',
-    posterUrl: undefined,
-    videoUrl: undefined,
-    isAvailable: false,
-    notesAr: 'خانة مخصصة لتوثيق مراحل الشغل الميداني الحقيقي',
-    notesEn: 'Designated slot for authentic construction process video footage'
+    posterUrl: '/assets/images/hero_architectural_finishing_details_1792893859892.jpg',
+    videoUrl: '/assets/videos/video-03-finishing-process.mp4',
+    isAvailable: true,
+    isFeaturedInitial: true,
+    notesAr: 'توثيق مراحل الشغل الميداني الحقيقي والتأسيسات',
+    notesEn: 'Authentic construction process video footage'
   },
   {
     id: 4,
@@ -734,11 +736,12 @@ export const VIDEO_SLOTS_MANIFEST: VideoSlot[] = [
     subtitleEn: 'Detailed room-by-room walkthrough of a fully delivered residence',
     descriptionAr: 'جولة سينمائية متكاملة تستعرض توزيع الإنارة، تناسق الأرضيات مع الجدران، وتفاصيل الأبواب والأثاث المدمج بعد التسليم النهائي.',
     descriptionEn: 'Comprehensive interior walkthrough showing completed illumination, integrated joinery, and seamless finishing transitions.',
-    posterUrl: undefined,
-    videoUrl: undefined,
-    isAvailable: false,
-    notesAr: 'خانة مخصصة لجولة الشقة المكتملة الفعلية',
-    notesEn: 'Designated slot for completed apartment walkthrough video'
+    posterUrl: '/assets/images/hero_luxury_apartment_living_1792893858819.jpg',
+    videoUrl: '/assets/videos/video-04-completed-apartment.mp4',
+    isAvailable: true,
+    isFeaturedInitial: true,
+    notesAr: 'جولة الشقة المكتملة الفعلية وتسليم المفتاح',
+    notesEn: 'Completed apartment walkthrough video'
   },
   {
     id: 5,
@@ -751,10 +754,10 @@ export const VIDEO_SLOTS_MANIFEST: VideoSlot[] = [
     subtitleEn: 'How commercial layouts are engineered for heavy use, ergonomics and style',
     descriptionAr: 'استعراض حلول التشطيب التجاري المتين للمحلات والواجهات والتمديدات المتخصصة التي تلبي متطلبات النشاط والتشغيل.',
     descriptionEn: 'Visual tour of robust commercial installations, custom shopfronts, and specialized operational infrastructure.',
-    posterUrl: undefined,
-    videoUrl: undefined,
-    isAvailable: false,
-    notesAr: 'خانة مخصصة للمشاريع والمحلات التجارية المعتمدة',
-    notesEn: 'Designated slot for verified commercial project walkthrough'
+    posterUrl: '/assets/images/hero_commercial_retail_space_1792893859170.jpg',
+    videoUrl: '/assets/videos/video-05-commercial-project.mp4',
+    isAvailable: true,
+    notesAr: 'استعراض المشروع التجاري المكتمل',
+    notesEn: 'Verified commercial project walkthrough'
   }
 ];

@@ -28,7 +28,7 @@ export const BUSINESS_CONFIG: BusinessConfig = {
   descriptorAr: 'للتشطيبات المعمارية والتصميم الداخلي',
   brandLineEn: 'From Vision to Reality.',
   brandLineAr: 'من الفكرة إلى التنفيذ.',
-  siteVisitFeeEgp: 600,
+  siteVisitFeeEgp: 0,
   // Central WhatsApp number configuration:
   // Dynamically retrieved or updated
   whatsappNumber: getStoredWhatsAppNumber(),
@@ -43,23 +43,23 @@ export const BUSINESS_CONFIG: BusinessConfig = {
 };
 
 export const FEE_POLICY = {
-  feeEgp: 600,
+  feeEgp: 0,
   deductible: true,
-  summaryAr: 'رسوم المعاينة الهندسية الميدانية 600 جنيه مصري، وتُخصم بالكامل من إجمالي تكلفة المقاولة عند الاتفاق على تنفيذ المشروع.',
-  summaryEn: 'Site visit engineering fee is 600 EGP, 100% credited towards the project execution contract upon agreement.',
-  paymentNoticeAr: 'يتم إرسال بيانات التحويل (InstaPay أو Vodafone Cash) يدوياً عبر محادثة واتساب بعد الاتفاق المبدئي، ولا يتم أي دفع إلكتروني داخل الموقع.',
-  paymentNoticeEn: 'Payment instructions (InstaPay or Vodafone Cash) are shared directly via WhatsApp conversation upon initial agreement. No online payment occurs on this website.',
+  summaryAr: 'معاينة هندسية ميدانية شاملة للموقع يترأسها المهندس وفريقه الفني لرفع المقاسات وتقديم الاستشارة الإنشائية والمعمارية.',
+  summaryEn: 'Comprehensive on-site engineering survey led by the engineer and technical team to verify dimensions and provide structural consultation.',
+  paymentNoticeAr: 'يتم التنسيق وتحديد الموعد المناسب لزيارة الموقع وتأكيد التفاصيل مباشرة عبر محادثة واتساب الرسمية.',
+  paymentNoticeEn: 'Appointment scheduling and preliminary scope coordination occur directly through the official WhatsApp conversation.',
   detailsAr: [
-    'المعاينة تشمل الفحص الإنشائي والمعماري الميداني للموقع ورفع المقاسات المبدئية ومناقشة متطلبات العميل بدقة.',
-    'في حال الاتفاق على تنفيذ الأعمال مع المؤسسة، يُخصم مبلغ الـ 600 ج.م بالكامل من دفعة التعاقد الأولى.',
-    'في حال عدم الاتفاق على التنفيذ، يظل المبلغ مستحقاً مقابل خدمة الفحص الفني والاستشارة الهندسية الميدانية.',
-    'يتم تأكيد الموعد النهائي للمعاينة بعد التحقق المتبادل عبر واتساب من استلام الرسوم.'
+    'المعاينة تشمل الفحص الإنشائي والمعماري الميداني للموقع ورفع المقاسات الدقيقة ومناقشة متطلبات العميل بدقة.',
+    'وضع التقرير الهندسي الأولي للشيرب والمناسيب وتوزيع المساحات واحتياجات التأسيس.',
+    'تقديم استشارة فنية شاملة حول أفضل الخامات والمواصفات القياسية الملائمة للموقع.',
+    'يتم تأكيد الموعد النهائي للمعاينة بالتنسيق المباشر عبر تطبيق واتساب.'
   ],
   detailsEn: [
     'The inspection covers physical architectural assessment, structural check, dimensions recording, and in-depth scope consultation.',
-    'If you agree to execute the project with us, the 600 EGP fee is credited 100% towards the execution contract.',
-    'If no execution agreement is finalized, the fee remains earned for the professional on-site engineering assessment.',
-    'The final appointment time is confirmed directly via WhatsApp once transfer receipt is reconciled.'
+    'Formulating engineering observations, preliminary space allocation, and rough-in requirements.',
+    'Providing comprehensive technical consultation on approved materials and construction standards.',
+    'The final appointment schedule is confirmed directly through mutual coordination on WhatsApp.'
   ]
 };
 
@@ -134,7 +134,7 @@ export function buildWhatsAppLink(options: {
 - الموعد المقترح للمعاينة: 
 - تفاصيل إضافية: 
 
-(ملاحظة: أتفهم أن رسوم المعاينة 600 ج.م تُخصم بالكامل عند التعاقد على التنفيذ، وبرجاء تزويدي ببيانات التحويل عبر InstaPay أو Vodafone Cash).`;
+برجاء تأكيد الموعد ومناقشة التفاصيل الهندسية.`;
   } else {
     text = `Hello Eng. Mohamed Hosny Construction & Interior Design,
 I would like to request an on-site engineering inspection (Service: ${service}).
@@ -148,7 +148,7 @@ I would like to request an on-site engineering inspection (Service: ${service}).
 - Preferred Inspection Date: 
 - Additional Notes: 
 
-(Note: I understand the 600 EGP site visit inspection fee is 100% credited towards the contract upon execution agreement. Please provide transfer instructions via InstaPay or Vodafone Cash).`;
+Please reach out to confirm the appointment and discuss technical details.`;
   }
 
   return `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`;

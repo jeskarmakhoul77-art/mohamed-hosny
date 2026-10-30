@@ -50,7 +50,7 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({
             <div className="space-y-4">
               <div className="p-4 bg-[#1F4A3B] text-[#F7F5F0] rounded-sm border border-[#D1B995]/30">
                 <span className="text-[#D1B995] font-bold text-sm block mb-1">
-                  {currentLang === 'ar' ? 'رسوم المعاينة الهندسية: 600 جنيه مصري' : 'Site Visit Inspection Fee: 600 EGP'}
+                  {currentLang === 'ar' ? 'ضوابط المعاينة الهندسية الميدانية' : 'Site Visit Inspection Policy'}
                 </span>
                 <p className="text-xs text-[#F7F5F0]/90">
                   {currentLang === 'ar' ? FEE_POLICY.summaryAr : FEE_POLICY.summaryEn}
@@ -71,22 +71,22 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({
           {policyType === 'refund' && (
             <div className="space-y-3">
               <h4 className="font-bold text-[#1F4A3B] text-sm">
-                {currentLang === 'ar' ? 'سياسة الإلغاء واسترداد الرسوم:' : 'Cancellation & Refund Terms:'}
+                {currentLang === 'ar' ? 'سياسة المواعيد والإلغاء:' : 'Appointment Scheduling & Cancellation Terms:'}
               </h4>
               <p>
                 {currentLang === 'ar'
-                  ? 'يمكن للعميل طلب إلغاء موعد المعاينة واسترداد الرسوم المسددة بالكامل قبل موعد الزيارة المحدد بـ 24 ساعة على الأقل.'
-                  : 'Clients may request cancellation and a full refund up to 24 hours prior to the scheduled site visit inspection.'}
+                  ? 'يمكن للعميل طلب تعديل أو إلغاء موعد المعاينة بالتنسيق المسبق قبل موعد الزيارة المحدد بوقت كافٍ.'
+                  : 'Clients may request rescheduling or cancellation with advance notice prior to the scheduled site visit.'}
               </p>
               <p>
                 {currentLang === 'ar'
-                  ? 'في حال تحرك المهندس أو حضور الفريق الفني لموقع العقار في الموعد المحدد، تعتبر الرسوم مستحقة بالكامل مقابل تكاليف الانتقال والوقت الهندسي المخصص.'
-                  : 'Once our engineering team has dispatched or arrived on site at the agreed time, the inspection fee is fully earned to cover travel and engineering allocation.'}
+                  ? 'نحرص على الالتزام التام بالمواعيد المحددة لضمان أعلى مستوى من الجودة والمهنية الهندسية.'
+                  : 'We adhere strictly to confirmed appointment schedules ensuring utmost professional engineering standards.'}
               </p>
               <p>
                 {currentLang === 'ar'
-                  ? 'عند التعاقد على تنفيذ الأعمال، يتم خصم الـ 600 ج.م تلقائياً من إجمالي قيمة المقاولة دون أي اقتطاع.'
-                  : 'Upon final execution contract signing, the full 600 EGP is automatically credited towards the project value.'}
+                  ? 'عند التعاقد على تنفيذ الأعمال، يتم اعتماد كافة الترتيبات الفنية المتفق عليها واعتماد جدول التنفيذ المعتمد.'
+                  : 'Upon final execution contract signing, all agreed technical arrangements and project milestones are officially scheduled.'}
               </p>
             </div>
           )}

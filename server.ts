@@ -47,6 +47,17 @@ const VALID_SLOT_KEYS = new Set<string>([
   'eng-certificate'
 ]);
 
+// Extensible slot key validator supporting new videos, before/after photos, and new project works
+function isValidSlotKey(key: string): boolean {
+  if (VALID_SLOT_KEYS.has(key)) return true;
+  if (/^video-[a-zA-Z0-9_-]+$/i.test(key)) return true;
+  if (/^before-after-[a-zA-Z0-9_-]+$/i.test(key)) return true;
+  if (/^(project|custom|work|site|photo|stage)-[a-zA-Z0-9_-]+$/i.test(key)) return true;
+  const local = readLocalManifest();
+  if (local.slots && local.slots[key]) return true;
+  return false;
+}
+
 // Allowed MIME types
 const ALLOWED_MIME_TYPES = new Set<string>([
   'image/jpeg',
@@ -432,10 +443,10 @@ app.post('/api/media/create-signed-upload-url', requireAdminAuth, async (req, re
     }
 
     const safeSlotKey = slotKey.replace(/[^a-zA-Z0-9_-]/g, '');
-    if (!VALID_SLOT_KEYS.has(safeSlotKey)) {
+    if (!isValidSlotKey(safeSlotKey)) {
       return res.status(400).json({
         success: false,
-        message: `Unauthorized slotKey '${slotKey}'. Must be one of the 50 designated website slots.`
+        message: `Unauthorized slotKey '${slotKey}'. Must match a valid media slot key pattern.`
       });
     }
 
@@ -503,10 +514,10 @@ app.post('/api/media/confirm-upload', requireAdminAuth, async (req, res) => {
     }
 
     const safeSlotKey = slotKey.replace(/[^a-zA-Z0-9_-]/g, '');
-    if (!VALID_SLOT_KEYS.has(safeSlotKey)) {
+    if (!isValidSlotKey(safeSlotKey)) {
       return res.status(400).json({
         success: false,
-        message: `Unauthorized slotKey '${slotKey}'. Must be one of the 50 designated slots.`
+        message: `Unauthorized slotKey '${slotKey}'. Must match a valid media slot key pattern.`
       });
     }
 
@@ -773,11 +784,17 @@ app.post('/api/upload', requireAdminAuth, async (req, res) => {
         console.warn('[Supabase] Could not sync manifest file to bucket:', cloudManifestErr);
       }
     } else {
-      // Local development fallback
-      const destinationPath = path.resolve(uploadsDir, safeFileName);
+      // Git-tracked repository storage under public/assets/
+      const isVideo = safeFileName.endsWith('.mp4') || safeFileName.endsWith('.webm');
+      const targetSubdir = isVideo ? 'videos' : 'images';
+      const targetDir = path.resolve(__dirname, 'public', 'assets', targetSubdir);
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+      const destinationPath = path.resolve(targetDir, safeFileName);
       fs.writeFileSync(destinationPath, buffer);
-      finalPublicUrl = `/uploads/${safeFileName}`;
-      storageType = 'local_fallback';
+      finalPublicUrl = `/assets/${targetSubdir}/${safeFileName}`;
+      storageType = 'git_repository';
 
       const manifest = readLocalManifest();
       manifest.slots[safeSlotKey] = {

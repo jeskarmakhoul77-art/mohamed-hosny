@@ -45,7 +45,8 @@ import {
   Check,
   ShieldAlert,
   Server,
-  Save
+  Save,
+  PlusCircle
 } from 'lucide-react';
 
 interface MediaManagerModalProps {
@@ -140,6 +141,15 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
   const [videoUrlInput, setVideoUrlInput] = useState('');
   const videoFileInputRef = useRef<HTMLInputElement>(null);
   const [targetVideoForUpload, setTargetVideoForUpload] = useState<string | null>(null);
+
+  // Extensibility & Future Additions State (New Videos, Project Photos, Before/After)
+  const [isAddingNewSlot, setIsAddingNewSlot] = useState(false);
+  const [newSlotCategory, setNewSlotCategory] = useState<'video' | 'project' | 'before_after'>('video');
+  const [newSlotKey, setNewSlotKey] = useState('');
+  const [newSlotTitleAr, setNewSlotTitleAr] = useState('');
+  const [newSlotUrl, setNewSlotUrl] = useState('');
+  const [newSlotSaving, setNewSlotSaving] = useState(false);
+  const [newSlotMsg, setNewSlotMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Refresh auth and Supabase status on open
   useEffect(() => {
@@ -543,6 +553,34 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
       setUploadingSlotKey(null);
       setUploadProgress(0);
       setTargetVideoForUpload(null);
+    }
+  };
+
+  const handleCreateNewSlot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSlotKey.trim() || !newSlotUrl.trim() || newSlotSaving) return;
+
+    setNewSlotSaving(true);
+    setNewSlotMsg(null);
+
+    const safeKey = newSlotKey.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    const res = await saveSlotToServer(safeKey, newSlotUrl.trim(), newSlotTitleAr || safeKey);
+    setNewSlotSaving(false);
+
+    if (res.success) {
+      setNewSlotMsg({
+        type: 'success',
+        text: currentLang === 'ar' ? 'تمت إضافة الخانة وحفظها في السيرفر بشكل دائم!' : 'Slot added and permanently saved to server!'
+      });
+      setNewSlotKey('');
+      setNewSlotTitleAr('');
+      setNewSlotUrl('');
+      onRefreshData();
+    } else {
+      setNewSlotMsg({
+        type: 'error',
+        text: res.error || (currentLang === 'ar' ? 'فشل حفظ الخانة في السيرفر' : 'Failed to save slot to server')
+      });
     }
   };
 
@@ -1542,6 +1580,83 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
                         </div>
                       );
                     })}
+                  </div>
+
+                  {/* Dynamic Slot Extensibility Form */}
+                  <div className="mt-6 p-5 bg-[#FAF8F5] border border-[#D1B995]/40 rounded-sm space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <PlusCircle className="w-4 h-4 text-[#B89B6A]" />
+                        <h4 className="text-xs font-bold text-[#1F4A3B] uppercase tracking-wider">
+                          {currentLang === 'ar' ? 'إضافة خانة فيديو أو مشروع جديد (التوسع المستقبلي)' : 'Add New Video or Project Slot (Future Expansion)'}
+                        </h4>
+                      </div>
+                      <span className="text-[10px] font-mono bg-[#152B24] text-[#D1B995] px-2 py-0.5 rounded-xs">
+                        PERMANENT STORAGE
+                      </span>
+                    </div>
+
+                    <form onSubmit={handleCreateNewSlot} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                      <div className="md:col-span-3 space-y-1">
+                        <label className="text-[11px] font-medium text-gray-700 block">
+                          {currentLang === 'ar' ? 'معرّف الخانة (SlotKey):' : 'Slot Key:'}
+                        </label>
+                        <input
+                          type="text"
+                          value={newSlotKey}
+                          onChange={(e) => setNewSlotKey(e.target.value)}
+                          placeholder="video-06-commercial"
+                          className="w-full p-2 text-xs border rounded-sm font-mono bg-white"
+                          required
+                        />
+                      </div>
+
+                      <div className="md:col-span-4 space-y-1">
+                        <label className="text-[11px] font-medium text-gray-700 block">
+                          {currentLang === 'ar' ? 'عنوان الفيديو / المشروع:' : 'Title:'}
+                        </label>
+                        <input
+                          type="text"
+                          value={newSlotTitleAr}
+                          onChange={(e) => setNewSlotTitleAr(e.target.value)}
+                          placeholder={currentLang === 'ar' ? 'جولة في فيلا التجمع' : 'Villa Walkthrough'}
+                          className="w-full p-2 text-xs border rounded-sm bg-white"
+                          required
+                        />
+                      </div>
+
+                      <div className="md:col-span-3 space-y-1">
+                        <label className="text-[11px] font-medium text-gray-700 block">
+                          {currentLang === 'ar' ? 'رابط الفيديو / الملف:' : 'Video / Media URL:'}
+                        </label>
+                        <input
+                          type="text"
+                          value={newSlotUrl}
+                          onChange={(e) => setNewSlotUrl(e.target.value)}
+                          placeholder="https://..."
+                          className="w-full p-2 text-xs border rounded-sm font-mono bg-white"
+                          required
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <button
+                          type="submit"
+                          disabled={newSlotSaving}
+                          className="w-full py-2 px-3 text-xs font-bold bg-[#1F4A3B] hover:bg-[#152B24] text-[#D1B995] rounded-sm transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <Save className="w-3.5 h-3.5" />
+                          <span>{newSlotSaving ? '...' : (currentLang === 'ar' ? 'حفظ الخانة' : 'Save Slot')}</span>
+                        </button>
+                      </div>
+                    </form>
+
+                    {newSlotMsg && (
+                      <div className={`text-xs p-2.5 rounded-sm flex items-center gap-2 ${newSlotMsg.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-300' : 'bg-red-50 text-red-800 border border-red-300'}`}>
+                        {newSlotMsg.type === 'success' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <AlertTriangle className="w-3.5 h-3.5 text-red-600" />}
+                        <span>{newSlotMsg.text}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
