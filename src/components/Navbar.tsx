@@ -3,6 +3,7 @@ import { Language } from '../types';
 import { translations } from '../translations';
 import { BrandLogo } from './BrandLogo';
 import { Globe, Menu, X, MessageCircle } from 'lucide-react';
+import { DISPLAY_WHATSAPP_NUMBER, OFFICIAL_WHATSAPP_LINK } from '../config/businessConfig';
 
 interface NavbarProps {
   currentLang: Language;
@@ -79,13 +80,20 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             {/* Primary Action Button -> Direct WhatsApp Booking */}
-            <button
-              onClick={() => onOpenWhatsApp(currentLang === 'ar' ? 'تشطيب شقق متكامل' : 'Full Apartment Fit-Out')}
+            <a
+              href={OFFICIAL_WHATSAPP_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                e.preventDefault();
+                onOpenWhatsApp(currentLang === 'ar' ? 'تشطيب شقق متكامل' : 'Full Apartment Fit-Out');
+              }}
+              title={currentLang === 'ar' ? `واتساب: ${DISPLAY_WHATSAPP_NUMBER}` : `WhatsApp: ${DISPLAY_WHATSAPP_NUMBER}`}
               className="hidden sm:inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold tracking-wide uppercase text-[#1F4A3B] bg-[#D1B995] hover:bg-[#E5D1B0] transition-colors rounded-sm shadow-sm whitespace-nowrap cursor-pointer focus-visible:ring-2 focus-visible:ring-white"
             >
               <MessageCircle className="w-4 h-4 fill-current/20" />
               <span>{t.bookSiteVisitBtn}</span>
-            </button>
+            </a>
 
             {/* Mobile menu toggle */}
             <button
@@ -116,16 +124,23 @@ export const Navbar: React.FC<NavbarProps> = ({
             ))}
           </nav>
           <div className="pt-2 flex flex-col gap-2.5">
-            <button
-              onClick={() => {
+            <a
+              href={OFFICIAL_WHATSAPP_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                e.preventDefault();
                 setMobileMenuOpen(false);
                 onOpenWhatsApp(currentLang === 'ar' ? 'تشطيب شقق متكامل' : 'Full Apartment Fit-Out');
               }}
-              className="w-full py-3 text-center text-xs font-bold uppercase tracking-wider text-[#1F4A3B] bg-[#D1B995] hover:bg-[#E5D1B0] rounded-sm flex items-center justify-center gap-2"
+              className="w-full py-3 text-center text-xs font-bold uppercase tracking-wider text-[#1F4A3B] bg-[#D1B995] hover:bg-[#E5D1B0] rounded-sm flex items-center justify-center gap-2 shadow-sm"
             >
               <MessageCircle className="w-4 h-4 fill-current/20" />
               <span>{t.bookViaWhatsApp}</span>
-            </button>
+              <span className="font-mono text-[11px] bg-[#1F4A3B]/15 px-1.5 py-0.5 rounded-xs" dir="ltr">
+                {DISPLAY_WHATSAPP_NUMBER}
+              </span>
+            </a>
           </div>
         </div>
       )}

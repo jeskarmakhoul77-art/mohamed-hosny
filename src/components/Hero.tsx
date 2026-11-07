@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Language } from '../types';
 import { translations } from '../translations';
-import { HERO_SLIDES, HeroSlide } from '../config/businessConfig';
+import { HERO_SLIDES, HeroSlide, DISPLAY_WHATSAPP_NUMBER, OFFICIAL_WHATSAPP_LINK } from '../config/businessConfig';
 import { BrandLogo } from './BrandLogo';
 import {
   MessageCircle,
@@ -119,13 +119,20 @@ export const Hero: React.FC<HeroProps> = ({ currentLang, onOpenWhatsApp }) => {
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2 w-full sm:w-auto">
               {/* Primary WhatsApp Booking Button */}
-              <button
-                onClick={() => onOpenWhatsApp(currentLang === 'ar' ? 'تشطيب شقق متكامل' : 'Full Apartment Fit-Out')}
+              <a
+                href={OFFICIAL_WHATSAPP_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onOpenWhatsApp(currentLang === 'ar' ? 'تشطيب شقق متكامل' : 'Full Apartment Fit-Out');
+                }}
+                title={currentLang === 'ar' ? `واتساب: ${DISPLAY_WHATSAPP_NUMBER}` : `WhatsApp: ${DISPLAY_WHATSAPP_NUMBER}`}
                 className="inline-flex items-center justify-center gap-3 px-8 py-4 text-sm font-bold uppercase tracking-wider text-[#1F4A3B] bg-[#D1B995] hover:bg-[#E5D1B0] transition-all rounded-sm shadow-lg cursor-pointer whitespace-nowrap focus-visible:ring-2 focus-visible:ring-white group"
               >
                 <MessageCircle className="w-5 h-5 text-[#1F4A3B] fill-current/20 group-hover:scale-110 transition-transform" />
                 <span>{t.heroPrimaryCta}</span>
-              </button>
+              </a>
 
               {/* Secondary Explore Work Button */}
               <a

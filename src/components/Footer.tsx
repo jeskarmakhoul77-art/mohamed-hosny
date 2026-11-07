@@ -2,7 +2,7 @@ import React from 'react';
 import { Language } from '../types';
 import { translations } from '../translations';
 import { BrandLogo } from './BrandLogo';
-import { BUSINESS_CONFIG, FEE_POLICY } from '../config/businessConfig';
+import { BUSINESS_CONFIG, FEE_POLICY, DISPLAY_WHATSAPP_NUMBER, OFFICIAL_WHATSAPP_LINK } from '../config/businessConfig';
 import { Globe, MapPin, Settings, MessageCircle, CheckCircle2, FolderOpen } from 'lucide-react';
 
 interface FooterProps {
@@ -44,15 +44,36 @@ export const Footer: React.FC<FooterProps> = ({
               <span>{currentLang === 'ar' ? BUSINESS_CONFIG.serviceAreaAr : BUSINESS_CONFIG.serviceAreaEn}</span>
             </div>
 
-            {/* Direct WhatsApp Action */}
-            <div className="pt-2">
-              <button
-                onClick={() => onOpenWhatsApp(currentLang === 'ar' ? 'تشطيب شقق متكامل' : 'Full Apartment Fit-Out')}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold rounded-sm transition-colors cursor-pointer shadow-md"
+            {/* Direct WhatsApp Action with 01055865637 */}
+            <div className="pt-2 space-y-2">
+              <a
+                href={OFFICIAL_WHATSAPP_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onOpenWhatsApp(currentLang === 'ar' ? 'تشطيب شقق متكامل' : 'Full Apartment Fit-Out');
+                }}
+                className="inline-flex items-center gap-2.5 px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold rounded-sm transition-colors cursor-pointer shadow-md group"
               >
-                <MessageCircle className="w-4 h-4" />
+                <MessageCircle className="w-4 h-4 text-emerald-200 fill-current/20 group-hover:scale-110 transition-transform" />
                 <span>{t.whatsappChatBtn}</span>
-              </button>
+                <span className="font-mono text-emerald-100 bg-emerald-800/80 px-2 py-0.5 rounded-xs text-[11px] font-semibold tracking-wider" dir="ltr">
+                  {DISPLAY_WHATSAPP_NUMBER}
+                </span>
+              </a>
+              <div className="text-[11px] text-[#F7F5F0]/70 flex items-center gap-1.5 font-mono">
+                <span className="text-[#D1B995] font-sans">{currentLang === 'ar' ? 'رقم الواتساب الرسمي:' : 'Official WhatsApp:'}</span>
+                <a
+                  href={OFFICIAL_WHATSAPP_LINK}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white hover:text-[#D1B995] transition-colors font-bold underline underline-offset-4"
+                  dir="ltr"
+                >
+                  {DISPLAY_WHATSAPP_NUMBER}
+                </a>
+              </div>
             </div>
           </div>
 
@@ -130,12 +151,32 @@ export const Footer: React.FC<FooterProps> = ({
                 ? 'تواصل مباشرة عبر واتساب لتحديد موعد المعاينة الهندسية لمشروعك.'
                 : 'Connect directly on WhatsApp to coordinate your on-site engineering visit.'}
             </p>
-            <button
-              onClick={() => onOpenWhatsApp(currentLang === 'ar' ? 'تشطيب شقق متكامل' : 'Full Apartment Fit-Out')}
-              className="w-full py-2.5 text-xs font-bold uppercase tracking-wider text-[#1F4A3B] bg-[#D1B995] hover:bg-[#E5D1B0] transition-colors rounded-sm text-center block cursor-pointer"
+            <a
+              href={OFFICIAL_WHATSAPP_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                e.preventDefault();
+                onOpenWhatsApp(currentLang === 'ar' ? 'تشطيب شقق متكامل' : 'Full Apartment Fit-Out');
+              }}
+              className="w-full py-2.5 text-xs font-bold uppercase tracking-wider text-[#1F4A3B] bg-[#D1B995] hover:bg-[#E5D1B0] transition-colors rounded-sm text-center block cursor-pointer shadow-sm"
             >
-              {t.bookSiteVisitBtn}
-            </button>
+              <div className="flex items-center justify-center gap-2">
+                <MessageCircle className="w-4 h-4 fill-current/20" />
+                <span>{t.bookSiteVisitBtn}</span>
+              </div>
+            </a>
+            <div className="text-center pt-0.5">
+              <a
+                href={OFFICIAL_WHATSAPP_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] font-mono text-[#D1B995] hover:text-white transition-colors underline underline-offset-2"
+                dir="ltr"
+              >
+                {DISPLAY_WHATSAPP_NUMBER}
+              </a>
+            </div>
 
             {/* Quick Admin Triggers: Media Manager & WhatsApp Config */}
             <div className="pt-2 flex flex-col gap-1.5 text-center sm:text-right rtl:sm:text-left">

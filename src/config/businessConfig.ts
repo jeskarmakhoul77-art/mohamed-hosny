@@ -1,22 +1,35 @@
 import { BusinessConfig } from '../types';
 
-// Default business configuration
+// Official business configuration
 // Mohamed Hosny — Construction & Interior Design
-export const DEFAULT_WHATSAPP_NUMBER = '201000000000'; // Default Egyptian placeholder format: +20 1X XXXX XXXX
+export const OFFICIAL_WHATSAPP_NUMBER = '201055865637'; // International format for wa.me
+export const DISPLAY_WHATSAPP_NUMBER = '01055865637';   // Local format displayed to users
+export const DEFAULT_WHATSAPP_NUMBER = OFFICIAL_WHATSAPP_NUMBER;
+export const OFFICIAL_WHATSAPP_LINK = 'https://wa.me/201055865637';
 
 export function getStoredWhatsAppNumber(): string {
   try {
     const saved = localStorage.getItem('mh_whatsapp_number');
-    if (saved && saved.trim()) return saved.trim();
+    if (saved && saved.trim() && saved.trim() !== '201000000000') {
+      let clean = saved.trim().replace(/[^0-9]/g, '');
+      if (clean.startsWith('01') && clean.length === 11) {
+        clean = '2' + clean;
+      }
+      if (clean) return clean;
+    }
   } catch {
     // ignore
   }
-  return '';
+  return OFFICIAL_WHATSAPP_NUMBER;
 }
 
 export function setStoredWhatsAppNumber(num: string): void {
   try {
-    localStorage.setItem('mh_whatsapp_number', num.trim());
+    let clean = num.trim().replace(/[^0-9]/g, '');
+    if (clean.startsWith('01') && clean.length === 11) {
+      clean = '2' + clean;
+    }
+    localStorage.setItem('mh_whatsapp_number', clean || OFFICIAL_WHATSAPP_NUMBER);
   } catch {
     // ignore
   }
@@ -30,8 +43,7 @@ export const BUSINESS_CONFIG: BusinessConfig = {
   brandLineAr: 'من الفكرة إلى التنفيذ.',
   siteVisitFeeEgp: 0,
   // Central WhatsApp number configuration:
-  // Dynamically retrieved or updated
-  whatsappNumber: getStoredWhatsAppNumber(),
+  whatsappNumber: OFFICIAL_WHATSAPP_NUMBER,
   instapayAddress: '',
   bankAccountName: 'المهندس محمد حسني — حساب التشطيبات المعمارية',
   bankAccountNumber: '',
@@ -110,13 +122,26 @@ export const HERO_SLIDES: HeroSlide[] = [
 
 /**
  * Builds prefilled bilingual WhatsApp link with customer template fields
+ * or returns base https://wa.me/201055865637 if no options are passed
  */
-export function buildWhatsAppLink(options: {
+export function buildWhatsAppLink(options?: {
   serviceName?: string;
   projectStage?: string;
   lang?: 'ar' | 'en';
 }): string {
-  const whatsappNumber = getStoredWhatsAppNumber() || BUSINESS_CONFIG.whatsappNumber;
+  let whatsappNumber = getStoredWhatsAppNumber() || BUSINESS_CONFIG.whatsappNumber || OFFICIAL_WHATSAPP_NUMBER;
+  let cleanNumber = whatsappNumber.replace(/[^0-9]/g, '');
+  if (cleanNumber.startsWith('01') && cleanNumber.length === 11) {
+    cleanNumber = '2' + cleanNumber;
+  }
+  if (!cleanNumber || cleanNumber === '201000000000') {
+    cleanNumber = OFFICIAL_WHATSAPP_NUMBER;
+  }
+
+  if (!options) {
+    return `https://wa.me/${cleanNumber}`;
+  }
+
   const lang = options.lang || 'ar';
   const service = options.serviceName || (lang === 'ar' ? 'تشطيب شقق متكامل' : 'Full Apartment Fit-Out');
 
@@ -151,5 +176,5 @@ I would like to request an on-site engineering inspection (Service: ${service}).
 Please reach out to confirm the appointment and discuss technical details.`;
   }
 
-  return `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`;
+  return `https://wa.me/${cleanNumber}?text=${encodeURIComponent(text)}`;
 }

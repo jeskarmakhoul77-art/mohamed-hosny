@@ -735,7 +735,7 @@ app.post('/api/upload', requireAdminAuth, async (req, res) => {
     const { client, bucket, isConfigured } = getSupabaseInstance();
 
     let finalPublicUrl = '';
-    let storageType: 'supabase' | 'local_fallback' = 'local_fallback';
+    let storageType = 'git_repository';
 
     if (isConfigured && client) {
       // 1. Upload to Supabase Storage Bucket

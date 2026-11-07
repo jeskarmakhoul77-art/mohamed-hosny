@@ -131,7 +131,7 @@ export const translations = {
     whatsappPromptDesc: 'سيتم توجيهك إلى تطبيق واتساب مع رسالة جاهزة تتضمن تفاصيل الخدمة وحقولاً لتعبئة بيانات مشروعك.',
     whatsappNotSetTitle: 'تنبيه: رقم الواتساب الرسمي قيد الإعداد',
     whatsappNotSetDesc: 'لم يتم تعيين رقم واتساب رسمي بعد في إعدادات الموقع. يمكنك كمسؤول تعيين الرقم الرسمي مباشرة أدناه، أو التواصل لاحقاً.',
-    setWhatsAppNumberLabel: 'أدخل رقم الواتساب الرسمي (مثال: 201012345678):',
+    setWhatsAppNumberLabel: 'رقم الواتساب الرسمي (مثال: 01055865637):',
     saveWhatsAppBtn: 'حفظ رقم الواتساب',
 
     // Site Visit Fee & Payment info
@@ -305,7 +305,7 @@ export const translations = {
     whatsappPromptDesc: 'You will be redirected to WhatsApp with a prefilled message containing the service details and optional project fields.',
     whatsappNotSetTitle: 'Notice: Official WhatsApp Number Pending Setup',
     whatsappNotSetDesc: 'The company WhatsApp line is currently pending official configuration. As an administrator, you can configure the number below.',
-    setWhatsAppNumberLabel: 'Enter Official WhatsApp Number (e.g. 201012345678):',
+    setWhatsAppNumberLabel: 'Official WhatsApp Number (e.g. 01055865637):',
     saveWhatsAppBtn: 'Save WhatsApp Number',
 
     // Site Visit Fee & Payment info

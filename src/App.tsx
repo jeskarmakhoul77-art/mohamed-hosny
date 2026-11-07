@@ -27,6 +27,7 @@ import { ProjectProcess } from './components/ProjectProcess';
 import { AboutSection } from './components/AboutSection';
 import { EngineerProfileSection } from './components/EngineerProfileSection';
 import { Footer } from './components/Footer';
+import { FloatingWhatsAppButton } from './components/FloatingWhatsAppButton';
 import { WhatsAppConfigModal } from './components/WhatsAppConfigModal';
 import { MediaSlotsModal } from './components/MediaSlotsModal';
 import { PolicyModal } from './components/PolicyModal';
@@ -128,12 +129,6 @@ export default function App() {
    * client fields (name, location, property type, area, and current stage).
    */
   const handleOpenWhatsApp = useCallback((serviceName?: string) => {
-    const currentNumber = getStoredWhatsAppNumber();
-    if (!currentNumber || currentNumber.trim() === '') {
-      setIsConfigWhatsAppOpen(true);
-      return;
-    }
-
     const url = buildWhatsAppLink({
       serviceName,
       lang: currentLang
@@ -217,6 +212,12 @@ export default function App() {
         onOpenPolicy={(type) => setPolicyType(type)}
         onOpenConfigWhatsApp={() => setIsConfigWhatsAppOpen(true)}
         onOpenMediaSlotsModal={() => setIsMediaSlotsOpen(true)}
+      />
+
+      {/* Floating WhatsApp Action Button with 01055865637 */}
+      <FloatingWhatsAppButton
+        currentLang={currentLang}
+        onOpenWhatsApp={handleOpenWhatsApp}
       />
 
       {/* Modals */}

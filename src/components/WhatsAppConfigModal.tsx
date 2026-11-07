@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Language } from '../types';
 import { translations } from '../translations';
-import { getStoredWhatsAppNumber, setStoredWhatsAppNumber } from '../config/businessConfig';
+import { getStoredWhatsAppNumber, setStoredWhatsAppNumber, DISPLAY_WHATSAPP_NUMBER } from '../config/businessConfig';
 import { X, MessageCircle, Phone, CheckCircle2, ShieldAlert } from 'lucide-react';
 
 interface WhatsAppConfigModalProps {
@@ -18,7 +18,7 @@ export const WhatsAppConfigModal: React.FC<WhatsAppConfigModalProps> = ({
   onNumberSaved
 }) => {
   const t = translations[currentLang];
-  const [phoneInput, setPhoneInput] = useState(() => getStoredWhatsAppNumber());
+  const [phoneInput, setPhoneInput] = useState(() => getStoredWhatsAppNumber() || DISPLAY_WHATSAPP_NUMBER);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
@@ -83,7 +83,7 @@ export const WhatsAppConfigModal: React.FC<WhatsAppConfigModalProps> = ({
                 <Phone className="w-4 h-4 text-[#B89B6A] absolute top-3 left-3 pointer-events-none" />
                 <input
                   type="tel"
-                  placeholder="201012345678"
+                  placeholder="01055865637"
                   value={phoneInput}
                   onChange={(e) => setPhoneInput(e.target.value)}
                   className="w-full text-xs sm:text-sm p-2.5 pl-9 bg-white border border-[#D1B995]/40 rounded-sm focus:border-[#1F4A3B] focus:outline-none font-mono"
