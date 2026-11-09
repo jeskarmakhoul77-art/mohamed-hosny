@@ -2,20 +2,20 @@ import { BusinessConfig } from '../types';
 
 // Official business configuration
 // Mohamed Hosny — Construction & Interior Design
-export const OFFICIAL_WHATSAPP_NUMBER = '201055865637'; // International format for wa.me
-export const DISPLAY_WHATSAPP_NUMBER = '01055865637';   // Local format displayed to users
+export const OFFICIAL_WHATSAPP_NUMBER = '201228744400'; // International format for wa.me
+export const DISPLAY_WHATSAPP_NUMBER = '01228744400';   // Local format displayed to users
 export const DEFAULT_WHATSAPP_NUMBER = OFFICIAL_WHATSAPP_NUMBER;
-export const OFFICIAL_WHATSAPP_LINK = 'https://wa.me/201055865637';
+export const OFFICIAL_WHATSAPP_LINK = 'https://wa.me/201228744400';
 
 export function getStoredWhatsAppNumber(): string {
   try {
     const saved = localStorage.getItem('mh_whatsapp_number');
-    if (saved && saved.trim() && saved.trim() !== '201000000000') {
+    if (saved && saved.trim() && saved.trim() !== '201000000000' && saved.trim() !== '201055865637') {
       let clean = saved.trim().replace(/[^0-9]/g, '');
       if (clean.startsWith('01') && clean.length === 11) {
         clean = '2' + clean;
       }
-      if (clean) return clean;
+      if (clean && clean !== '201055865637') return clean;
     }
   } catch {
     // ignore
@@ -122,7 +122,7 @@ export const HERO_SLIDES: HeroSlide[] = [
 
 /**
  * Builds prefilled bilingual WhatsApp link with customer template fields
- * or returns base https://wa.me/201055865637 if no options are passed
+ * or returns base https://wa.me/201228744400 if no options are passed
  */
 export function buildWhatsAppLink(options?: {
   serviceName?: string;

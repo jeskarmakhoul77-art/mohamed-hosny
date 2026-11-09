@@ -374,7 +374,18 @@ export async function fetchSupabaseStatus(): Promise<{
   error?: string;
 }> {
   try {
-    const res = await fetch('/api/settings/supabase-status');
+    const res = await fetch('/api/settings/supabase-status', {
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) {
+      return {
+        connected: false,
+        url: null,
+        bucket: 'project-media',
+        usingFallback: true,
+        message: res.status === 401 ? 'Unauthorized' : `Server error: ${res.status}`
+      };
+    }
     const data = await res.json();
     return data;
   } catch (err: any) {
@@ -539,9 +550,9 @@ export async function fetchAndApplyRemoteManifest(): Promise<{
   // 1. Merge Apartment Stages prioritizing permanent repository paths and cloud overrides
   const mergedApartment: ApartmentStageSlot[] = APARTMENT_STAGES_MANIFEST.map((stage) => {
     const match = slotsMap[stage.slotKey];
-    let activeUrl = match?.url || stage.imageUrl || stage.defaultFilePath;
+    let activeUrl = match?.url || stage.imageUrl || undefined;
     if (activeUrl && activeUrl.startsWith('/uploads/')) {
-      activeUrl = stage.defaultFilePath;
+      activeUrl = stage.imageUrl || undefined;
     }
     return {
       ...stage,
@@ -554,9 +565,9 @@ export async function fetchAndApplyRemoteManifest(): Promise<{
   // 2. Merge Portfolio Slots prioritizing permanent repository paths and cloud overrides
   const mergedPortfolio: PortfolioSlot[] = PORTFOLIO_SLOTS_MANIFEST.map((slot) => {
     const match = slotsMap[slot.slotKey];
-    let activeUrl = match?.url || slot.imageUrl || slot.defaultFilePath;
+    let activeUrl = match?.url || slot.imageUrl || undefined;
     if (activeUrl && activeUrl.startsWith('/uploads/')) {
-      activeUrl = slot.defaultFilePath;
+      activeUrl = slot.imageUrl || undefined;
     }
     return {
       ...slot,
@@ -620,8 +631,8 @@ export function getSavedApartmentStages(): ApartmentStageSlot[] {
     if (!raw) {
       return APARTMENT_STAGES_MANIFEST.map((s) => ({
         ...s,
-        imageUrl: s.imageUrl || s.defaultFilePath,
-        isPlaceholder: !(s.imageUrl || s.defaultFilePath)
+        imageUrl: s.imageUrl || undefined,
+        isPlaceholder: !s.imageUrl
       }));
     }
     const parsed = JSON.parse(raw);
@@ -629,11 +640,11 @@ export function getSavedApartmentStages(): ApartmentStageSlot[] {
       return APARTMENT_STAGES_MANIFEST.map((manifestSlot, index) => {
         const stored = parsed[index];
         let activeUrl = stored?.imageUrl;
-        // If stored was ephemeral /uploads/ that got cleared, fallback to repository asset path
+        // If stored was ephemeral /uploads/ that got cleared, fallback to manifest imageUrl
         if (activeUrl && activeUrl.startsWith('/uploads/')) {
-          activeUrl = manifestSlot.defaultFilePath;
+          activeUrl = manifestSlot.imageUrl || undefined;
         } else if (!activeUrl) {
-          activeUrl = manifestSlot.imageUrl || manifestSlot.defaultFilePath;
+          activeUrl = manifestSlot.imageUrl || undefined;
         }
         return {
           ...manifestSlot,
@@ -662,8 +673,8 @@ export function getSavedPortfolioSlots(): PortfolioSlot[] {
     if (!raw) {
       return PORTFOLIO_SLOTS_MANIFEST.map((s) => ({
         ...s,
-        imageUrl: s.imageUrl || s.defaultFilePath,
-        isPlaceholder: !(s.imageUrl || s.defaultFilePath)
+        imageUrl: s.imageUrl || undefined,
+        isPlaceholder: !s.imageUrl
       }));
     }
     const parsed = JSON.parse(raw);
@@ -672,9 +683,9 @@ export function getSavedPortfolioSlots(): PortfolioSlot[] {
         const stored = parsed[index];
         let activeUrl = stored?.imageUrl;
         if (activeUrl && activeUrl.startsWith('/uploads/')) {
-          activeUrl = manifestSlot.defaultFilePath;
+          activeUrl = manifestSlot.imageUrl || undefined;
         } else if (!activeUrl) {
-          activeUrl = manifestSlot.imageUrl || manifestSlot.defaultFilePath;
+          activeUrl = manifestSlot.imageUrl || undefined;
         }
         return {
           ...manifestSlot,
@@ -708,13 +719,14 @@ export function getSavedVideoSlots(): VideoSlot[] {
       }));
     }
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length === 5) {
-      return VIDEO_SLOTS_MANIFEST.map((manifestSlot, index) => {
-        const stored = parsed[index];
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      const storedMap = new Map<string, VideoSlot>(parsed.map((s: VideoSlot) => [s.slotKey, s]));
+      return VIDEO_SLOTS_MANIFEST.map((manifestSlot) => {
+        const stored = storedMap.get(manifestSlot.slotKey);
         let activeUrl = stored?.videoUrl;
         if (activeUrl && activeUrl.startsWith('/uploads/')) {
-          activeUrl = manifestSlot.defaultFilePath;
-        } else if (!activeUrl || manifestSlot.slotKey === 'video-02-client-interview') {
+          activeUrl = manifestSlot.videoUrl || manifestSlot.defaultFilePath;
+        } else if (!activeUrl) {
           activeUrl = manifestSlot.videoUrl || manifestSlot.defaultFilePath;
         }
         return {
@@ -738,3 +750,93 @@ export function saveLocalVideoSlots(slots: VideoSlot[]): void {
     // ignore
   }
 }
+
+export interface SupabaseCloudVideo {
+  id: number;
+  fileName: string;
+  url: string;
+  storagePath: string;
+  sizeBytes: number;
+  sizeMb: string;
+  isAssigned: boolean;
+  assignedSlotKey?: string;
+  assignedSlotTitleAr?: string;
+  assignedSlotTitleEn?: string;
+  source: 'supabase_cloud';
+}
+
+export interface PhysicalMediaInventory {
+  success: boolean;
+  stats: {
+    totalPhysicalFiles: number;
+    totalPhysicalImages: number;
+    totalPhysicalVideos: number;
+    archiveImagesCount: number;
+    archiveVideosCount: number;
+    supabaseCloudVideosCount: number;
+    totalMediaAssetsCount: number;
+    portfolioSlotsTotal: number;
+    apartmentStagesTotal: number;
+    videoSlotsTotal: number;
+    assignedSlotsCount: number;
+    emptyOrPendingSlotsCount: number;
+    unassignedInboxCount: number;
+    unassignedCloudVideosCount: number;
+    verifiedDuplicateGroupsCount: number;
+  };
+  inboxFiles: Array<{
+    id: number;
+    fileName: string;
+    url: string;
+    sizeBytes: number;
+    sizeKb: string;
+    category: string;
+    isAssigned: boolean;
+    isAiConcept: boolean;
+    isDuplicate: boolean;
+    duplicateGroup?: string;
+  }>;
+  physicalVideos: Array<{
+    id: number;
+    fileName: string;
+    url: string;
+    location: string;
+    sizeBytes: number;
+    sizeMb: string;
+    isAssigned: boolean;
+    isDuplicate: boolean;
+    duplicateGroup?: string;
+  }>;
+  supabaseCloudVideos: SupabaseCloudVideo[];
+  additionalImages: Array<{
+    fileName: string;
+    url: string;
+    location: string;
+    sizeKb: string;
+  }>;
+  duplicateGroups: Array<{
+    groupId: string;
+    hashType: string;
+    hash: string;
+    titleAr: string;
+    titleEn: string;
+    files: string[];
+    actionNoteAr: string;
+    actionNoteEn: string;
+  }>;
+  assignedSlots: Record<string, { url: string; fileName: string; updatedAt?: string }>;
+  updatedAt: string;
+}
+
+export async function fetchMediaInventory(): Promise<PhysicalMediaInventory | null> {
+  try {
+    const res = await fetch('/api/media/inventory', {
+      headers: getAuthHeaders()
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+

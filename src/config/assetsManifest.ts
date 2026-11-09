@@ -31,9 +31,9 @@ export const APARTMENT_STAGES_MANIFEST: ApartmentStageSlot[] = [
     titleEn: 'Initial Condition & Site Preparation',
     descriptionAr: 'معاينة الموقع ورفع المقاسات وإزالة المخلفات وتجهيز الحوائط والمسارات الإنشائية لبدء أعمال التأسيس.',
     descriptionEn: 'Initial site inspection, architectural dimensioning, debris clearance, and masonry preparation before MEP rough-in.',
-    imageUrl: undefined, // Replace with '/assets/projects/apartment/stage-01.jpg' or external URL
-    isPlaceholder: true,
-    notes: 'مخصص للصورة الأصلية الأولى للشقة عند الاستلام'
+    imageUrl: '/assets/inbox/IMG-20261025-WA0102.jpg',
+    isPlaceholder: false,
+    notes: 'معتمد بالصورة الأصلية لأعمال التكسير وإخلاء المخلفات وتجهيز مسارات التأسيس للشقة'
   },
   {
     stageNumber: 2,
@@ -45,9 +45,9 @@ export const APARTMENT_STAGES_MANIFEST: ApartmentStageSlot[] = [
     titleEn: 'Plumbing & Electrical First-Fix',
     descriptionAr: 'تمديد مواسير الصرف والتغذية بالضغط المعتمد ودفن خراطيم ولوحات الكهرباء وتحديد نقاط الإنارة والتكييف.',
     descriptionEn: 'Pressure-tested PPR plumbing lines, conduit embedment, distribution boards, and precise electrical boxes layout.',
-    imageUrl: undefined, // Replace with '/assets/projects/apartment/stage-02.jpg' or external URL
-    isPlaceholder: true,
-    notes: 'مخصص للصورة الأصلية لأعمال السباكة والكهرباء للشقة ذاتها'
+    imageUrl: '/assets/inbox/IMG-20261025-WA0103.jpg',
+    isPlaceholder: false,
+    notes: 'معتمد بالصورة الأصلية لضبط الشيرب وميزان الليزر وتمديد خراطيم ومسارات الكهرباء'
   },
   {
     stageNumber: 3,
@@ -59,9 +59,9 @@ export const APARTMENT_STAGES_MANIFEST: ApartmentStageSlot[] = [
     titleEn: 'Plastering, Surface Leveling & Tiling',
     descriptionAr: 'ضبط البؤج والأوتار وعمل الطرطشة والمحارة المستوية، تليها أعمال تركيب السيراميك والبورسلين بميزان ليزر.',
     descriptionEn: 'Laser-guided screeding and wall plastering followed by precision porcelain and ceramic tile installation.',
-    imageUrl: undefined, // Replace with '/assets/projects/apartment/stage-03.jpg' or external URL
-    isPlaceholder: true,
-    notes: 'مخصص للصورة الأصلية لأعمال المحارة والتبليط للشقة ذاتها'
+    imageUrl: '/assets/inbox/IMG-20261026-WA0014.jpg_20261026020533.jpg',
+    isPlaceholder: false,
+    notes: 'معتمد بالصورة الأصلية لتركيب سيراميك وبورسلين الحوائط بمونة مستوية وكلبسات التسوية'
   },
   {
     stageNumber: 4,
@@ -73,9 +73,9 @@ export const APARTMENT_STAGES_MANIFEST: ApartmentStageSlot[] = [
     titleEn: 'Gypsum Ceilings & Paint Base Coats',
     descriptionAr: 'تثبيت شاسيهات الصاج وألواح الجبس بورد المقاومة للرطوبة وتجهيز بيوت النور وبدء مراحل سحب المعجون.',
     descriptionEn: 'Galvanized steel framing, moisture-resistant gypsum boards, recessed lighting coves, and skim-coat putty layers.',
-    imageUrl: undefined, // Replace with '/assets/projects/apartment/stage-04.jpg' or external URL
-    isPlaceholder: true,
-    notes: 'مخصص للصورة الأصلية للجبس بورد وبطانات الدهان للشقة ذاتها'
+    imageUrl: '/assets/inbox/IMG-20261025-WA0077.jpg',
+    isPlaceholder: false,
+    notes: 'معتمد بالصورة الأصلية للأسقف المعلقة بالجبس بورد وبطانات المعجون للشقة'
   },
   {
     stageNumber: 5,
@@ -87,9 +87,9 @@ export const APARTMENT_STAGES_MANIFEST: ApartmentStageSlot[] = [
     titleEn: 'Final Handover & Completed Interior',
     descriptionAr: 'إنهاء أوجه الدهان النهائية وتركيب المفاتيح ووحدات الإضاءة والأبواب والتنظيف المعماري الشامل وتسليم المفتاح.',
     descriptionEn: 'Top-coat architectural paints, designer luminaires, sanitary fittings, final architectural detailing and client handover.',
-    imageUrl: undefined, // Replace with '/assets/projects/apartment/stage-05.jpg' or external URL
+    imageUrl: undefined,
     isPlaceholder: true,
-    notes: 'مخصص للصورة الأصلية للنتيجة النهائية للشقة ذاتها بعد اكتمال التشطيب'
+    notes: 'قيد انتظار جلسة تصوير احترافية بعد الفرش الكامل — تم فصل صورة التأسيس منعاً للتضليل'
   }
 ];
 
@@ -106,8 +106,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Certified Bathroom & Kitchen Supply Lines',
     descriptionAr: 'تمديد مواسير البولي بروبلين المعتمدة واختبارها بالضغط العالي قبل أعمال العزل.',
     descriptionEn: 'PPR supply piping network pressure tested before waterproofing application.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0105.jpg',
+    isPlaceholder: false
   },
   {
     id: 2,
@@ -120,8 +120,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Chemical Bathroom Floor Waterproofing',
     descriptionAr: 'تطبيق طبقات العزل الكيميائي المزدوج واختبار الغمر بالمياه لمدة 48 ساعة.',
     descriptionEn: 'Dual-coat polymer waterproofing tested by 48-hour static water pooling.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0107.jpg_20261026022012.jpg',
+    isPlaceholder: false
   },
   {
     id: 3,
@@ -148,8 +148,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Concealed Cistern Installation',
     descriptionAr: 'تثبيت قواعد الشيت المعلق المدفونة بميزان ليزر وضبط الارتفاع الهندسي.',
     descriptionEn: 'Wall-hung toilet carrier frames anchored and laser leveled.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0106.jpg',
+    isPlaceholder: false
   },
   {
     id: 5,
@@ -162,8 +162,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Sanitary Fixtures & Designer Faucets',
     descriptionAr: 'تركيب الخلاطات الدفونة والأحواض والشاور جلاس بعد اكتمال التبليط.',
     descriptionEn: 'Precision installation of concealed mixers, vanities, and shower glass.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261026-WA0013.jpg_20261026020654.jpg',
+    isPlaceholder: false
   },
 
   // 2. Electrical (5 slots: electrical-01 to electrical-05)
@@ -178,8 +178,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Main Distribution Panel Wiring',
     descriptionAr: 'توزيع الأحمال الكهربائية بالتساوي مع قواطع حماية تفاضلية معتمدة.',
     descriptionEn: 'Balanced load distribution across certified RCBO residual circuit breakers.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0007.jpg',
+    isPlaceholder: false
   },
   {
     id: 7,
@@ -192,8 +192,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Conduit Routing & Certified Cable Pulling',
     descriptionAr: 'تأمين مسارات الكهرباء بأقطار مناسبة واستخدام كابلات معتمدة خالية من الهالوجين.',
     descriptionEn: 'Code-compliant conduit runs with certified high-spec copper cabling.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0056.jpg_20261026021341.jpg',
+    isPlaceholder: false
   },
   {
     id: 8,
@@ -206,8 +206,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Recessed Architectural Lighting Layout',
     descriptionAr: 'تحديد إحداثيات ومراكز الإضاءة طبقاً للمخطط المعماري وتجنب الظلال.',
     descriptionEn: 'Architectural luminaire layout aligned with furniture and circulation axes.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0101.jpg',
+    isPlaceholder: false
   },
   {
     id: 9,
@@ -216,12 +216,12 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     category: 'electrical',
     categoryLabelAr: 'التأسيسات الكهربائية',
     categoryLabelEn: 'Electrical Installations',
-    titleAr: 'تأسيس شبكة التيار الخفيف والإنترنت والساوند',
-    titleEn: 'Low Voltage, Data & Sound Systems',
-    descriptionAr: 'مسارات منفصلة لشبكات البيانات والسنترال والصوتيات لمنع التداخل الكهرومغناطيسي.',
-    descriptionEn: 'Isolated conduit pathways for Cat6 data cables and multi-zone audio lines.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    titleAr: 'تجميع شبكة التوزيع ولوحة القواطع الداخلية',
+    titleEn: 'Low Voltage & Internal Distribution Board Wiring',
+    descriptionAr: 'تنظيم بسبارات التوصيل النحاسية وتأمين مسارات كابلات التوزيع بالتساوي.',
+    descriptionEn: 'Neat copper busbar integration and balanced circuit protection wiring.',
+    imageUrl: '/assets/inbox/IMG-20261025-WA0029.jpg',
+    isPlaceholder: false
   },
   {
     id: 10,
@@ -234,8 +234,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Switchplate Fitting & Smart Accessories',
     descriptionAr: 'تركيب الشاسيهات والوجوه الديكورية بأفقية تامة ومطابقة لمسار الديكور.',
     descriptionEn: 'Flush-mounted designer switchgear leveled flush with wall finishes.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0090 - Copy.jpg',
+    isPlaceholder: false
   },
 
   // 3. Plastering & Surface Prep (5 slots: plastering-01 to plastering-05)
@@ -322,8 +322,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Laser-Cut Porcelain Tile Installation',
     descriptionAr: 'استخدام أحدث الكلبسات ونظام التسوية التلقائي لضمان عدم وجود أي رفرفة بين البلاطات.',
     descriptionEn: 'Leveling clip spacer system ensuring zero lippage across large slabs.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0006.jpg',
+    isPlaceholder: false
   },
   {
     id: 17,
@@ -336,8 +336,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Luxury Full-Height Bathroom Wall Tiles',
     descriptionAr: 'قص زوايا البلاط 45 درجة (شطف ليزر) لإنتاج زوايا خارجية هندسية فائقة النقاء.',
     descriptionEn: '45-degree mitered corner joints for seamless monolithic tiled edges.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0018.jpg_20261026021121.jpg',
+    isPlaceholder: false
   },
   {
     id: 18,
@@ -350,8 +350,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Antibacterial Epoxy Grouting',
     descriptionAr: 'تعبئة فواصل البورسلين بالإيبوكسي غير القابل للتشرب والمقاوم للرطوبة والبقع.',
     descriptionEn: 'Non-porous stain-resistant epoxy grout between precision joints.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261026-WA0012.jpg_20261026020407.jpg',
+    isPlaceholder: false
   },
   {
     id: 19,
@@ -364,8 +364,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Herringbone Pattern Wood-Look Tile',
     descriptionAr: 'رصف قطع السيراميك الخشبي بزوايا هندسية متناسقة مع خطوط الغرف.',
     descriptionEn: 'Accurate herringbone layout creating warm architectural floor texture.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261026-WA0018.jpg_20261026020317.jpg',
+    isPlaceholder: false
   },
   {
     id: 20,
@@ -378,8 +378,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Marble Skirting & Entrance Thresholds',
     descriptionAr: 'قص وتركيب وزرات الحوائط الغاطسة لتقليل تراكم الأتربة مع عتب المداخل الرخامي.',
     descriptionEn: 'Recessed baseboard trims and solid marble transition thresholds.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261026-WA0020.jpg_20261026023447.jpg',
+    isPlaceholder: false
   },
 
   // 5. Gypsum Board & Ceilings (5 slots: gypsum-01 to gypsum-05)
@@ -394,8 +394,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Galvanized Framing for Flat Ceilings',
     descriptionAr: 'تثبيت الأوميجا والسي واليو بمقاسات هندسية تمنع أي هبوط مستقبلي في السقف.',
     descriptionEn: 'Heavy gauge steel suspension grid preventing ceiling deflection.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0047.jpg_20261026021719.jpg',
+    isPlaceholder: false
   },
   {
     id: 22,
@@ -408,8 +408,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Recessed Light Coves & LED Profiles',
     descriptionAr: 'تصميم تجاويف إضاءة غير مباشرة توزع الضوء بنعومة على الحوائط والأسقف.',
     descriptionEn: 'Continuous indirect cove lighting troughs delivering soft ambient glow.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0057.jpg',
+    isPlaceholder: false
   },
   {
     id: 23,
@@ -418,12 +418,12 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     category: 'gypsum',
     categoryLabelAr: 'الجبس بورد والأسقف المعلقة',
     categoryLabelEn: 'Gypsum Board & Ceilings',
-    titleAr: 'ألواح جبس بورد خضراء مقاومة للرطوبة',
-    titleEn: 'Moisture-Resistant Green Board Fitment',
-    descriptionAr: 'تركيب ألواح مخصصة للمطابخ والحمامات تقاوم الأبخرة والرطوبة وتمنع العفن.',
-    descriptionEn: 'Water-repellent gypsum panels tailored for kitchen and bath zones.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    titleAr: 'أسقف جبس بورد مستوية بإضاءة بروفايل ليد هندسية',
+    titleEn: 'Geometric LED Profiles & Flush Gypsum Ceilings',
+    descriptionAr: 'توزيع خطوط الإنارة المغناطيسية والبروفايل الغاطس مع بيت ستارة مخفي.',
+    descriptionEn: 'Modern recessed magnetic and profile LED track lighting with concealed curtain drop.',
+    imageUrl: '/assets/inbox/IMG-20261025-WA0064.jpg',
+    isPlaceholder: false
   },
   {
     id: 24,
@@ -436,8 +436,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Joint Tape & Micro-Crack Puttying',
     descriptionAr: 'معالجة فواصل الألواح بشريط ورقي مستورد ومعجون مخصص لضمان استمرارية السطح.',
     descriptionEn: 'Fiber tape bedding and elastic joint compound preventing seam cracks.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0077.jpg',
+    isPlaceholder: false
   },
   {
     id: 25,
@@ -480,8 +480,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Washable Silk & Matt Acrylic Paints',
     descriptionAr: 'تطبيق خامات عالية الجودة مقاومة للأتربة والبهتان تدوم لسنوات طويلة.',
     descriptionEn: 'High-scrub luxury emulsion paints formulated for longevity and cleanability.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0067.jpg',
+    isPlaceholder: false
   },
   {
     id: 28,
@@ -522,8 +522,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Fabric Wallcoverings & Wall Moldings',
     descriptionAr: 'تثبيت بانوهات خشبية أو فوم مضغوط بمحاذاة هندسية دقيقة مع الدهان المتناسق.',
     descriptionEn: 'Precision architectural wall boiserie moldings and seamless luxury paper.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0089.jpg',
+    isPlaceholder: false
   },
 
   // 7. Interior Design & Joinery (5 slots: interior-01 to interior-05)
@@ -538,8 +538,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Harmonized Reception Living Palette',
     descriptionAr: 'دمج درجات الأخضر الداكن والرملي والبيج الدافئ مع الرخام والإضاءة الدافئة.',
     descriptionEn: 'Curated blend of forest greens, sand tones, warm creams, and natural stone.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0050.jpg',
+    isPlaceholder: false
   },
   {
     id: 32,
@@ -552,8 +552,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Integrated Modern Kitchen Joinery',
     descriptionAr: 'مطابخ بولي لاك أو إتش بي إل مع أسطح كوارتز وأجهزة مدمجة مسبقة التأسيس.',
     descriptionEn: 'Precision cabinetry with quartz countertops and flush built-in appliances.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0061.jpg',
+    isPlaceholder: false
   },
   {
     id: 33,
@@ -566,8 +566,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Custom Master Walk-In Dressing Room',
     descriptionAr: 'تقسيم وحدات التخزين بإضاءات ليد داخلية وأبواب زجاجية سموكي وإكسسوارات إيطالية.',
     descriptionEn: 'Smoked glass wardrobes with sensor-activated internal illumination.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0045.jpg',
+    isPlaceholder: false
   },
   {
     id: 34,
@@ -580,8 +580,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Natural Timber Cladding & Wood Slats',
     descriptionAr: 'فواصل بصرية دافئة تمنح الفراغات عمقاً معمارياً مع تكامل الإنارة الخلفية.',
     descriptionEn: 'Vertical fluted wood acoustic slats backlit with warm architectural LEDs.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0046(1).jpg',
+    isPlaceholder: false
   },
   {
     id: 35,
@@ -594,8 +594,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Statement Luminaire & Object Styling',
     descriptionAr: 'اختيار النجف المتدلي واللمبات الخافتة لتعزيز الهدوء والفخامة في المساء.',
     descriptionEn: 'Handpicked sculptural pendants complementing room scale and seating zones.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0081.jpg',
+    isPlaceholder: false
   },
 
   // 8. Commercial Projects (5 slots: commercial-01 to commercial-05)
@@ -638,8 +638,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Corporate Offices & Acoustic Meeting Rooms',
     descriptionAr: 'قواطع زجاجية مزدوجة مع عوازل صوتية لضمان الخصوصية والتركيز في بيئة العمل.',
     descriptionEn: 'Double-glazed acoustic partitions and functional ergonomic workspace routing.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0069.jpg',
+    isPlaceholder: false
   },
   {
     id: 39,
@@ -652,8 +652,8 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     titleEn: 'Heavy-Duty Commercial Epoxy & LVT Floors',
     descriptionAr: 'أرضيات مقاومة للحركة الكثيفة ومضادة للانزلاق وسهلة التنظيف للمنشآت التجارية.',
     descriptionEn: 'High-traffic commercial floor finishes engineered for retail resilience.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    imageUrl: '/assets/inbox/IMG-20261025-WA0092.jpg',
+    isPlaceholder: false
   },
   {
     id: 40,
@@ -664,10 +664,10 @@ export const PORTFOLIO_SLOTS_MANIFEST: PortfolioSlot[] = [
     categoryLabelEn: 'Commercial Fit-Outs',
     titleAr: 'شبكات إنذار حريق وتكييف مركزي تجاري',
     titleEn: 'Commercial HVAC & Fire Safety Routing',
-    descriptionAr: 'تمديد دكتات التكييف وشبكات الإطفاء طبقاً لاشتراطات السلامة والترخيص للمحلات.',
-    descriptionEn: 'Exposed spiral ductwork and code-compliant fire safety distribution.',
-    imageUrl: undefined,
-    isPlaceholder: true
+    descriptionAr: 'تمديد دكتات التكييف ومواسير الصاج وشبكات الإطفاء طبقاً لاشتراطات السلامة للمنشآت الرياضية والتجارية.',
+    descriptionEn: 'Exposed spiral ductwork, heavy gym ventilation, and code-compliant fire safety distribution.',
+    imageUrl: '/assets/inbox/IMG-20261025-WA0100.jpg',
+    isPlaceholder: false
   }
 ];
 
@@ -759,5 +759,135 @@ export const VIDEO_SLOTS_MANIFEST: VideoSlot[] = [
     isAvailable: true,
     notesAr: 'استعراض المشروع التجاري المكتمل',
     notesEn: 'Verified commercial project walkthrough'
+  },
+
+  // --------------------------------------------------------------------------
+  // The 7 Additional Supabase Cloud Videos (batch-02-2026: 12 Videos Total)
+  // --------------------------------------------------------------------------
+  {
+    id: 6,
+    slotKey: 'video-06-apartment-reception-tour',
+    defaultFilePath: 'project-media/mohamed-hosny/videos/batch-02-2026/1107(1).mp4',
+    slotType: 'completed_apartment',
+    titleAr: 'جولة الريسبشن والأسقف المعلقة بالصالون الفاخر',
+    titleEn: 'Luxury Living & Architectural Gypsum Ceiling Tour',
+    subtitleAr: 'استعراض الإضاءة غير المباشرة وتناسق الديكور بعد التسليم',
+    subtitleEn: 'On-site walkthrough highlighting cove illumination and modern salon detailing',
+    descriptionAr: 'توثيق سينمائي لجولة داخل الشقة السكنية يستعرض تفاصيل إنارة بيت النور وتنسيق الأثاث وتكامل الألوان الهادئة.',
+    descriptionEn: 'Cinema-grade site walkthrough exploring architectural cove lighting, ceiling detailing, and finished living space harmony.',
+    posterUrl: '/assets/images/hero_luxury_apartment_living_1792893858819.jpg',
+    videoUrl: 'https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(1).mp4',
+    isAvailable: true,
+    isFeaturedInitial: true,
+    notesAr: 'فيديو سحابي معتمد — جولة ريسبشن وشقة منفذة (1107(1).mp4)',
+    notesEn: 'Verified cloud video — Apartment living room walkthrough (1107(1).mp4)'
+  },
+  {
+    id: 7,
+    slotKey: 'video-07-interior-joinery-dressing',
+    defaultFilePath: 'project-media/mohamed-hosny/videos/batch-02-2026/1107(2).mp4',
+    slotType: 'finishing_process',
+    titleAr: 'تفاصيل التجاليد الخشبية ودواليب الدريسينج المودرن',
+    titleEn: 'Interior Architectural Joinery & Walk-In Wardrobes',
+    subtitleAr: 'دقة تصنيع وتركيب ألواح بديل الخشب والمرايا الزجاجية الفاخرة',
+    subtitleEn: 'Craftsmanship in vertical timber fluting, smoked glass wardrobes, and concealed lighting',
+    descriptionAr: 'استعراض حي لجودة تصنيع الأخشاب والدواليب الزجاجية العاكسة المدمجة وشرائح الخشب الديكورية المنفذة بدقة هندسية.',
+    descriptionEn: 'High-definition showcase of bespoke dressing room joinery, smoked glass surfaces, and integrated ambient lighting.',
+    posterUrl: '/assets/images/hero_architectural_finishing_details_1792893859892.jpg',
+    videoUrl: 'https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(2).mp4',
+    isAvailable: true,
+    isFeaturedInitial: true,
+    notesAr: 'فيديو سحابي معتمد — نجارة وتجاليد خشبية (1107(2).mp4)',
+    notesEn: 'Verified cloud video — Joinery & dressing wardrobe details (1107(2).mp4)'
+  },
+  {
+    id: 8,
+    slotKey: 'video-08-site-prep-materials',
+    defaultFilePath: 'project-media/mohamed-hosny/videos/batch-02-2026/1107(3).mp4',
+    slotType: 'finishing_process',
+    titleAr: 'تجهيزات الموقع وتشوين خامات التأسيس المعتمدة',
+    titleEn: 'Site Staging & Certified Materials Logistics',
+    subtitleAr: 'إدارة وتخزين مواد البناء وأسمنت التأسيس طبقا للأصول الهندسية',
+    subtitleEn: 'Strict on-site staging of certified raw materials, aggregates, and cement batches',
+    descriptionAr: 'لقطات من مرحلة التأسيس الأولى توضح استلام وتشوين أكياس الأسمنت ورمل التأسيس ومتابعة الموقع قبل بدء أعمال المحارة والكهرباء.',
+    descriptionEn: 'Ground-level site footage illustrating organized material storage, bulk staging, and preparatory works before MEP rough-in.',
+    posterUrl: '/assets/images/hero_architectural_finishing_details_1792893859892.jpg',
+    videoUrl: 'https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(3).mp4',
+    isAvailable: true,
+    isFeaturedInitial: true,
+    notesAr: 'فيديو سحابي معتمد — تشوينات وتجهيز موقع (1107(3).mp4)',
+    notesEn: 'Verified cloud video — Site preparation and materials staging (1107(3).mp4)'
+  },
+  {
+    id: 9,
+    slotKey: 'video-09-commercial-ductwork-mep',
+    defaultFilePath: 'project-media/mohamed-hosny/videos/batch-02-2026/1107(5).mp4',
+    slotType: 'commercial_project',
+    titleAr: 'تجهيزات دكتات الصاج والتهوية للمشاريع التجارية',
+    titleEn: 'Commercial Ducting & Industrial HVAC Infrastructure',
+    subtitleAr: 'توثيق ميداني لتركيبات وتمديدات مواسير الصاج والمرافق المتخصصة',
+    subtitleEn: 'Full documentation of heavy-duty spiral sheet metal ducting and commercial utilities',
+    descriptionAr: 'فيديو شامل يوثق استلام وتثبيت دكتات ومواسير الصاج المجلفن والتهوية المركزية للمنشآت التجارية والمحلات الكبرى.',
+    descriptionEn: 'Comprehensive on-site coverage of specialized galvanized duct installation and ventilation engineering for commercial venues.',
+    posterUrl: '/assets/images/hero_commercial_retail_space_1792893859170.jpg',
+    videoUrl: 'https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(5).mp4',
+    isAvailable: true,
+    isFeaturedInitial: true,
+    notesAr: 'فيديو سحابي معتمد — دكتات الصاج للمشاريع التجارية (1107(5).mp4)',
+    notesEn: 'Verified cloud video — Commercial sheet metal ductwork (1107(5).mp4)'
+  },
+  {
+    id: 10,
+    slotKey: 'video-10-floor-surface-grinding',
+    defaultFilePath: 'project-media/mohamed-hosny/videos/batch-02-2026/1107(6).mp4',
+    slotType: 'finishing_process',
+    titleAr: 'أعمال جلي وتسوية الأرضيات بالماكينات الميدانية',
+    titleEn: 'Precision Floor Leveling & Surface Grinding',
+    subtitleAr: 'تسوية خرسانات الأرضيات وتجهيزها قبل فرد التشطيب النهائي',
+    subtitleEn: 'Industrial machine grinding and screed leveling prior to luxury floor installation',
+    descriptionAr: 'توثيق العمل الميداني لفني معالجة وتسوية الأرضيات بالمعدات المتخصصة لضمان الاستواء التام ومنع أي ميول أو عيوب.',
+    descriptionEn: 'Field documentation of mechanical floor leveling and surface preparation to ensure perfectly flat substrates for tile and vinyl.',
+    posterUrl: '/assets/images/hero_architectural_finishing_details_1792893859892.jpg',
+    videoUrl: 'https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(6).mp4',
+    isAvailable: true,
+    isFeaturedInitial: true,
+    notesAr: 'فيديو سحابي معتمد — جلي وتسوية أرضيات (1107(6).mp4)',
+    notesEn: 'Verified cloud video — Floor surface grinding (1107(6).mp4)'
+  },
+  {
+    id: 11,
+    slotKey: 'video-11-wall-putty-prep',
+    defaultFilePath: 'project-media/mohamed-hosny/videos/batch-02-2026/1107(7).mp4',
+    slotType: 'finishing_process',
+    titleAr: 'تأسيس معجون الجدران والأسقف ومعالجة الزوايا',
+    titleEn: 'Wall Putty Surface Preparation & Corner Detailing',
+    subtitleAr: 'سحب سكينة المعجون وتثبيت زوايا الحوائط بنعومة هندسية فائقة',
+    subtitleEn: 'Multi-coat putty smoothing and sharp architectural corner bead treatments',
+    descriptionAr: 'استعراض طبقات سحب المعجون الإيطالي على الجدران والأسقف للوصول إلى أقصى درجات النعومة قبل الدهان النهائي.',
+    descriptionEn: 'On-site video documenting precise putty skimming, corner perfection, and pre-paint wall smoothing.',
+    posterUrl: '/assets/images/hero_architectural_finishing_details_1792893859892.jpg',
+    videoUrl: 'https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(7).mp4',
+    isAvailable: true,
+    isFeaturedInitial: true,
+    notesAr: 'فيديو سحابي معتمد — معجون جدران ودهانات (1107(7).mp4)',
+    notesEn: 'Verified cloud video — Wall putty application (1107(7).mp4)'
+  },
+  {
+    id: 12,
+    slotKey: 'video-12-structural-masonry-site',
+    defaultFilePath: 'project-media/mohamed-hosny/videos/batch-02-2026/1107(9).mp4',
+    slotType: 'finishing_process',
+    titleAr: 'مرحلة المباني الطوب الأحمر وإزالة التعديلات الإنشائية',
+    titleEn: 'Structural Red Brick Masonry & Demolition Cleanup',
+    subtitleAr: 'بناء القواطع الطوب وضبط الفتحات المعمارية في مستهل المشروع',
+    subtitleEn: 'Red brick wall erection and precise architectural partition layout',
+    descriptionAr: 'توثيق ميداني لمرحلة البدايات الإنشائية: رفع الجدران بالطوب الأحمر، إخلاء المخلفات، ومطابقة الفراغات مع المخطط الهندسي المعتمد.',
+    descriptionEn: 'Authentic site footage of the raw structural masonry phase, partition layout adjustments, and debris clearance.',
+    posterUrl: '/assets/images/hero_architectural_finishing_details_1792893859892.jpg',
+    videoUrl: 'https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(9).mp4',
+    isAvailable: true,
+    isFeaturedInitial: true,
+    notesAr: 'فيديو سحابي معتمد — مباني طوب أحمر وهدم (1107(9).mp4)',
+    notesEn: 'Verified cloud video — Structural red brick masonry (1107(9).mp4)'
   }
 ];

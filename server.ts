@@ -10,7 +10,28 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = Number(process.env.PORT) || 3000;
+function getPort(): number {
+  // 1. Check command line flags (--port <number> or -p <number>)
+  const portIndex = process.argv.findIndex((arg) => arg === '--port' || arg === '-p');
+  if (portIndex !== -1 && process.argv[portIndex + 1]) {
+    const p = parseInt(process.argv[portIndex + 1], 10);
+    if (!isNaN(p) && p > 0) return p;
+  }
+  // 2. Check DEFAULT_APP_PORT (set to 3000 by AI Studio container)
+  if (process.env.DEFAULT_APP_PORT) {
+    const p = parseInt(process.env.DEFAULT_APP_PORT, 10);
+    if (!isNaN(p) && p > 0) return p;
+  }
+  // 3. If PORT is provided and is NOT 8080 (which is reserved for NGINX proxy), use it
+  if (process.env.PORT && process.env.PORT !== '8080') {
+    const p = parseInt(process.env.PORT, 10);
+    if (!isNaN(p) && p > 0) return p;
+  }
+  // 4. Default to port 3000 as required by AI Studio runtime
+  return 3000;
+}
+
+const PORT = getPort();
 const HOST = '0.0.0.0';
 const IS_PROD = process.env.NODE_ENV === 'production';
 
@@ -37,12 +58,19 @@ const VALID_SLOT_KEYS = new Set<string>([
   'painting-01', 'painting-02', 'painting-03', 'painting-04', 'painting-05',
   'interior-01', 'interior-02', 'interior-03', 'interior-04', 'interior-05',
   'commercial-01', 'commercial-02', 'commercial-03', 'commercial-04', 'commercial-05',
-  // 5 Video Slots
+  // 12 Video Slots (5 original + 7 Supabase cloud)
   'video-01-owner-intro',
   'video-02-client-interview',
   'video-03-finishing-process',
   'video-04-completed-apartment',
   'video-05-commercial-project',
+  'video-06-apartment-reception-tour',
+  'video-07-interior-joinery-dressing',
+  'video-08-site-prep-materials',
+  'video-09-commercial-ductwork-mep',
+  'video-10-floor-surface-grinding',
+  'video-11-wall-putty-prep',
+  'video-12-structural-masonry-site',
   // Official Engineering Certificate
   'eng-certificate'
 ]);
@@ -96,7 +124,11 @@ if (!fs.existsSync(manifestFilePath)) {
 }
 
 // Manifest file helpers
-function readLocalManifest(): { slots: Record<string, { url: string; fileName: string; updatedAt: string }> } {
+function readLocalManifest(): {
+  slots: Record<string, { url: string; fileName: string; updatedAt: string }>;
+  updatedAt?: string;
+  bucket?: string;
+} {
   try {
     const raw = fs.readFileSync(manifestFilePath, 'utf-8');
     return JSON.parse(raw);
@@ -292,7 +324,7 @@ app.post('/api/auth/logout', (req, res) => {
 // -------------------------------------------------------------
 // Cloud Storage & Supabase Status & Setup
 // -------------------------------------------------------------
-app.get('/api/settings/supabase-status', async (_req, res) => {
+app.get('/api/settings/supabase-status', requireAdminAuth, async (_req, res) => {
   const { client, bucket, isConfigured } = getSupabaseInstance();
   const config = getCloudConfig();
 
@@ -383,7 +415,7 @@ app.get('/api/media/manifest', async (_req, res) => {
 // -------------------------------------------------------------
 // Inbox Original Media Discovery Endpoint
 // -------------------------------------------------------------
-app.get('/api/media/inbox', (_req, res) => {
+app.get('/api/media/inbox', requireAdminAuth, (_req, res) => {
   try {
     const inboxPath = path.resolve(__dirname, 'public', 'assets', 'inbox');
     if (!fs.existsSync(inboxPath)) {
@@ -423,6 +455,330 @@ app.get('/api/media/inbox', (_req, res) => {
       success: true,
       total: files.length,
       files
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// Comprehensive Media Inventory & Separation Architecture Endpoint
+// Separates physical files on disk from designated project slots
+// Protected strictly by requireAdminAuth
+// -------------------------------------------------------------
+app.get('/api/media/inventory', requireAdminAuth, (_req, res) => {
+  try {
+    const manifest = readLocalManifest();
+    const assignedSlots = manifest.slots || {};
+
+    // 1. Inbox 62 images
+    const inboxPath = path.resolve(__dirname, 'public', 'assets', 'inbox');
+    const inboxFileNames = fs.existsSync(inboxPath)
+      ? fs.readdirSync(inboxPath).filter((f) => f !== '.gitkeep' && !f.startsWith('.'))
+      : [];
+
+    const assignedUrlSet = new Set<string>();
+    Object.values(assignedSlots).forEach((s: any) => {
+      if (s && s.url) assignedUrlSet.add(s.url);
+    });
+
+    const inboxFiles = inboxFileNames.map((fileName, idx) => {
+      const filePath = path.join(inboxPath, fileName);
+      const stat = fs.statSync(filePath);
+      const url = `/assets/inbox/${encodeURIComponent(fileName)}`;
+      const isAssigned = assignedUrlSet.has(url);
+
+      let category = 'site';
+      let isAiConcept = false;
+      let isDuplicate = false;
+
+      if (fileName.startsWith('Gemini_')) {
+        category = 'concept';
+        isAiConcept = true;
+      } else if (fileName.includes('WA0012') && fileName.includes('020423')) {
+        isDuplicate = true;
+      }
+
+      return {
+        id: idx + 1,
+        fileName,
+        url,
+        sizeBytes: stat.size,
+        sizeKb: (stat.size / 1024).toFixed(1),
+        category,
+        isAssigned,
+        isAiConcept,
+        isDuplicate,
+        duplicateGroup: isDuplicate ? 'WA0012-pair' : undefined
+      };
+    });
+
+    // 2. Videos: 7 in public/assets/videos + 1 in root
+    const videosPath = path.resolve(__dirname, 'public', 'assets', 'videos');
+    const videoFileNames = fs.existsSync(videosPath)
+      ? fs.readdirSync(videosPath).filter((f) => f !== '.gitkeep' && !f.startsWith('.'))
+      : [];
+
+    const physicalVideos: Array<{
+      id: number;
+      fileName: string;
+      url: string;
+      location: string;
+      sizeBytes: number;
+      sizeMb: string;
+      isAssigned: boolean;
+      isDuplicate: boolean;
+      duplicateGroup?: string;
+    }> = [];
+
+    videoFileNames.forEach((fileName, idx) => {
+      const filePath = path.join(videosPath, fileName);
+      const stat = fs.statSync(filePath);
+      const url = `/assets/videos/${encodeURIComponent(fileName)}`;
+      const isAssigned = assignedUrlSet.has(url);
+      let isDup = false;
+      let group: string | undefined = undefined;
+
+      if (fileName === 'video-05-commercial-project.mp4' || fileName === 'client-interview.mp4') {
+        isDup = true;
+        group = 'client-interview-trio';
+      } else if (fileName === '1026(4).mp41.mp4' || fileName === 'video-04-completed-apartment.mp4') {
+        isDup = true;
+        group = 'apartment-video-pair';
+      }
+
+      physicalVideos.push({
+        id: idx + 1,
+        fileName,
+        url,
+        location: 'public/assets/videos/',
+        sizeBytes: stat.size,
+        sizeMb: (stat.size / (1024 * 1024)).toFixed(2),
+        isAssigned,
+        isDuplicate: isDup,
+        duplicateGroup: group
+      });
+    });
+
+    // Root video
+    const rootVideoName = '1026(1).mp41.mp4';
+    const rootVideoPath = path.resolve(__dirname, rootVideoName);
+    if (fs.existsSync(rootVideoPath)) {
+      const stat = fs.statSync(rootVideoPath);
+      physicalVideos.push({
+        id: physicalVideos.length + 1,
+        fileName: rootVideoName,
+        url: `/${rootVideoName}`,
+        location: 'project-root/',
+        sizeBytes: stat.size,
+        sizeMb: (stat.size / (1024 * 1024)).toFixed(2),
+        isAssigned: false,
+        isDuplicate: true,
+        duplicateGroup: 'client-interview-trio'
+      });
+    }
+
+    // 3. Other images across project
+    const otherImageDirs = [
+      { dir: path.resolve(__dirname, 'public', 'assets', 'images'), prefix: '/assets/images/' },
+      { dir: path.resolve(__dirname, 'public', 'assets', 'aistudio'), prefix: '/assets/aistudio/' },
+      { dir: path.resolve(__dirname, 'src', 'assets', 'images'), prefix: '/src/assets/images/' }
+    ];
+
+    let otherImagesCount = 0;
+    const additionalImages: Array<{ fileName: string; url: string; location: string; sizeKb: string }> = [];
+
+    otherImageDirs.forEach(({ dir, prefix }) => {
+      if (fs.existsSync(dir)) {
+        const files = fs.readdirSync(dir).filter((f) => !f.startsWith('.') && f !== '.gitkeep');
+        files.forEach((f) => {
+          const stat = fs.statSync(path.join(dir, f));
+          otherImagesCount++;
+          additionalImages.push({
+            fileName: f,
+            url: `${prefix}${encodeURIComponent(f)}`,
+            location: prefix,
+            sizeKb: (stat.size / 1024).toFixed(1)
+          });
+        });
+      }
+    });
+
+    const totalPhysicalImages = inboxFiles.length + otherImagesCount;
+    const totalPhysicalVideos = physicalVideos.length;
+    const totalPhysicalFiles = totalPhysicalImages + totalPhysicalVideos;
+
+    // 4. Unassigned inbox items
+    const unassignedFiles = inboxFiles.filter((f) => !f.isAssigned);
+
+    // 5. Duplicate groups
+    const duplicateGroups = [
+      {
+        groupId: 'WA0012-pair',
+        hashType: 'MD5',
+        hash: '541fcda80b9351b3a302297a04f412df',
+        titleAr: 'صورتان متطابقتان لتركيب السيراميك والمصارف (WA0012)',
+        titleEn: 'Identical Ceramic Tiling Photos (WA0012 Pair)',
+        files: [
+          'IMG-20261026-WA0012.jpg_20261026020407.jpg',
+          'IMG-20261026-WA0012.jpg_20261026020423.jpg'
+        ],
+        actionNoteAr: 'محفوظتان معاً في الأرشيف دون حذف، وتم تعيين الأولى لخانة tiling-03.',
+        actionNoteEn: 'Preserved in archive without deletion; first assigned to slot tiling-03.'
+      },
+      {
+        groupId: 'client-interview-trio',
+        hashType: 'SHA-256',
+        hash: 'ef2151d574223eb46f6f9621ba57fc109a93ae0ee4b5e2a2202616f7347900b3',
+        titleAr: 'ثلاث نسخ متطابقة لفيديو مقابلة العميل (صالون محمد وخالد)',
+        titleEn: 'Identical Client Interview Video Trio (4.88 MB)',
+        files: [
+          'public/assets/videos/client-interview.mp4',
+          'public/assets/videos/video-05-commercial-project.mp4',
+          '1026(1).mp41.mp4'
+        ],
+        actionNoteAr: 'محفوظة في أماكنها الأصلية؛ خانة video-05 قيد المراجعة لحين توفير لقطات مستقلة.',
+        actionNoteEn: 'Kept in place; slot video-05 flagged Pending Review awaiting unique footage.'
+      },
+      {
+        groupId: 'apartment-video-pair',
+        hashType: 'SHA-256',
+        hash: 'f6350e37a2a71c56a84dfc2d1b092a9c37255be9d2ee374a382bfafbca3f6402',
+        titleAr: 'نسختان متطابقتان لفيديو جولة الشقة المكتملة (7.32 MB)',
+        titleEn: 'Identical Completed Apartment Tour Video Pair (7.32 MB)',
+        files: [
+          'public/assets/videos/video-04-completed-apartment.mp4',
+          'public/assets/videos/1026(4).mp41.mp4'
+        ],
+        actionNoteAr: 'محفوظتان معاً؛ video-04 معين في مكتبة الفيديو، و1026(4) محفوظ في الأرشيف.',
+        actionNoteEn: 'Both preserved; video-04 linked in library, 1026(4) preserved in archive.'
+      }
+    ];
+
+    // 6. Supabase Cloud Videos (batch-02-2026)
+    const supabaseCloudVideos = [
+      {
+        id: 1,
+        fileName: '1107(1).mp4',
+        url: 'https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(1).mp4',
+        storagePath: 'mohamed-hosny/videos/batch-02-2026/1107(1).mp4',
+        sizeBytes: 20255390,
+        sizeMb: '19.32',
+        isAssigned: assignedUrlSet.has('https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(1).mp4'),
+        assignedSlotKey: 'video-06-apartment-reception-tour',
+        assignedSlotTitleAr: 'جولة الريسبشن والأسقف المعلقة بالصالون الفاخر',
+        assignedSlotTitleEn: 'Luxury Living & Architectural Gypsum Ceiling Tour',
+        source: 'supabase_cloud'
+      },
+      {
+        id: 2,
+        fileName: '1107(2).mp4',
+        url: 'https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(2).mp4',
+        storagePath: 'mohamed-hosny/videos/batch-02-2026/1107(2).mp4',
+        sizeBytes: 19532679,
+        sizeMb: '18.63',
+        isAssigned: assignedUrlSet.has('https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(2).mp4'),
+        assignedSlotKey: 'video-07-interior-joinery-dressing',
+        assignedSlotTitleAr: 'تفاصيل التجاليد الخشبية ودواليب الدريسينج المودرن',
+        assignedSlotTitleEn: 'Interior Architectural Joinery & Walk-In Wardrobes',
+        source: 'supabase_cloud'
+      },
+      {
+        id: 3,
+        fileName: '1107(3).mp4',
+        url: 'https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(3).mp4',
+        storagePath: 'mohamed-hosny/videos/batch-02-2026/1107(3).mp4',
+        sizeBytes: 24590063,
+        sizeMb: '23.45',
+        isAssigned: assignedUrlSet.has('https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(3).mp4'),
+        assignedSlotKey: 'video-08-site-prep-materials',
+        assignedSlotTitleAr: 'تجهيزات الموقع وتشوين خامات التأسيس المعتمدة',
+        assignedSlotTitleEn: 'Site Staging & Certified Materials Logistics',
+        source: 'supabase_cloud'
+      },
+      {
+        id: 4,
+        fileName: '1107(5).mp4',
+        url: 'https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(5).mp4',
+        storagePath: 'mohamed-hosny/videos/batch-02-2026/1107(5).mp4',
+        sizeBytes: 39554762,
+        sizeMb: '37.72',
+        isAssigned: assignedUrlSet.has('https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(5).mp4'),
+        assignedSlotKey: 'video-09-commercial-ductwork-mep',
+        assignedSlotTitleAr: 'تجهيزات دكتات الصاج والتهوية للمشاريع التجارية',
+        assignedSlotTitleEn: 'Commercial Ducting & Industrial HVAC Infrastructure',
+        source: 'supabase_cloud'
+      },
+      {
+        id: 5,
+        fileName: '1107(6).mp4',
+        url: 'https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(6).mp4',
+        storagePath: 'mohamed-hosny/videos/batch-02-2026/1107(6).mp4',
+        sizeBytes: 15881513,
+        sizeMb: '15.15',
+        isAssigned: assignedUrlSet.has('https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(6).mp4'),
+        assignedSlotKey: 'video-10-floor-surface-grinding',
+        assignedSlotTitleAr: 'أعمال جلي وتسوية الأرضيات بالماكينات الميدانية',
+        assignedSlotTitleEn: 'Precision Floor Leveling & Surface Grinding',
+        source: 'supabase_cloud'
+      },
+      {
+        id: 6,
+        fileName: '1107(7).mp4',
+        url: 'https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(7).mp4',
+        storagePath: 'mohamed-hosny/videos/batch-02-2026/1107(7).mp4',
+        sizeBytes: 15918572,
+        sizeMb: '15.18',
+        isAssigned: assignedUrlSet.has('https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(7).mp4'),
+        assignedSlotKey: 'video-11-wall-putty-prep',
+        assignedSlotTitleAr: 'تأسيس معجون الجدران والأسقف ومعالجة الزوايا',
+        assignedSlotTitleEn: 'Wall Putty Surface Preparation & Corner Detailing',
+        source: 'supabase_cloud'
+      },
+      {
+        id: 7,
+        fileName: '1107(9).mp4',
+        url: 'https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(9).mp4',
+        storagePath: 'mohamed-hosny/videos/batch-02-2026/1107(9).mp4',
+        sizeBytes: 27902921,
+        sizeMb: '26.61',
+        isAssigned: assignedUrlSet.has('https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(9).mp4'),
+        assignedSlotKey: 'video-12-structural-masonry-site',
+        assignedSlotTitleAr: 'مرحلة المباني الطوب الأحمر وإزالة التعديلات الإنشائية',
+        assignedSlotTitleEn: 'Structural Red Brick Masonry & Demolition Cleanup',
+        source: 'supabase_cloud'
+      }
+    ];
+
+    const stats = {
+      totalPhysicalFiles,
+      totalPhysicalImages,
+      totalPhysicalVideos,
+      archiveImagesCount: inboxFiles.length,
+      archiveVideosCount: physicalVideos.length,
+      supabaseCloudVideosCount: supabaseCloudVideos.length,
+      totalMediaAssetsCount: totalPhysicalFiles + supabaseCloudVideos.length,
+      portfolioSlotsTotal: 40,
+      apartmentStagesTotal: 5,
+      videoSlotsTotal: 12,
+      totalSlotsCount: 57,
+      assignedSlotsCount: Object.keys(assignedSlots).length,
+      emptyOrPendingSlotsCount: Math.max(0, 57 - Object.keys(assignedSlots).length),
+      unassignedInboxCount: unassignedFiles.length,
+      unassignedCloudVideosCount: supabaseCloudVideos.filter((v) => !v.isAssigned).length,
+      verifiedDuplicateGroupsCount: duplicateGroups.length
+    };
+
+    return res.json({
+      success: true,
+      stats,
+      inboxFiles,
+      physicalVideos,
+      supabaseCloudVideos,
+      additionalImages,
+      duplicateGroups,
+      assignedSlots,
+      updatedAt: manifest.updatedAt || new Date().toISOString()
     });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });

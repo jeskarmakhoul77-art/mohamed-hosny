@@ -3,7 +3,7 @@ import { Language } from '../types';
 import { translations } from '../translations';
 import { BrandLogo } from './BrandLogo';
 import { BUSINESS_CONFIG, FEE_POLICY, DISPLAY_WHATSAPP_NUMBER, OFFICIAL_WHATSAPP_LINK } from '../config/businessConfig';
-import { Globe, MapPin, Settings, MessageCircle, CheckCircle2, FolderOpen } from 'lucide-react';
+import { Globe, MapPin, Settings, MessageCircle, CheckCircle2, FolderOpen, Lock } from 'lucide-react';
 
 interface FooterProps {
   currentLang: Language;
@@ -44,7 +44,7 @@ export const Footer: React.FC<FooterProps> = ({
               <span>{currentLang === 'ar' ? BUSINESS_CONFIG.serviceAreaAr : BUSINESS_CONFIG.serviceAreaEn}</span>
             </div>
 
-            {/* Direct WhatsApp Action with 01055865637 */}
+            {/* Direct WhatsApp Action with 01228744400 */}
             <div className="pt-2 space-y-2">
               <a
                 href={OFFICIAL_WHATSAPP_LINK}
@@ -185,8 +185,8 @@ export const Footer: React.FC<FooterProps> = ({
                 className="inline-flex items-center gap-1.5 text-xs text-[#D1B995] hover:text-white font-semibold transition-colors cursor-pointer bg-[#152B24] border border-[#D1B995]/40 px-3 py-1.5 rounded-sm shadow-xs self-start sm:self-auto"
                 title={t.mediaManagerDesc}
               >
-                <FolderOpen className="w-3.5 h-3.5" />
-                <span>{t.mediaManagerBtn}</span>
+                <Lock className="w-3.5 h-3.5 text-[#D1B995]" />
+                <span>{currentLang === 'ar' ? 'دخول الإدارة (مدير الوسائط)' : 'Admin Portal (Media Manager)'}</span>
               </button>
 
               <button

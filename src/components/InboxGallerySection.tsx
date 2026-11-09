@@ -45,7 +45,7 @@ export const InboxGallerySection: React.FC<InboxGallerySectionProps> = ({
   // Visitor-friendly category tabs definition
   const categoryTabs = useMemo(() => {
     return [
-      { key: 'all', labelAr: 'كافة الأعمال (62)', labelEn: 'All Works (62)' },
+      { key: 'all', labelAr: 'كافة الأعمال المنفذة (61)', labelEn: 'All Executed Works (61)' },
       { key: 'flooring', labelAr: 'الأرضيات والبورسلين', labelEn: 'Flooring & Tiles' },
       { key: 'interior', labelAr: 'التشطيب والتصميم الداخلي', labelEn: 'Interior & Fit-Out' },
       { key: 'electrical', labelAr: 'الكهرباء والتأسيسات', labelEn: 'Electrical' },
@@ -56,9 +56,14 @@ export const InboxGallerySection: React.FC<InboxGallerySectionProps> = ({
     ];
   }, []);
 
-  // Filtered photos based on category & search query
+  // Filtered photos based on category & search query (strictly excludes AI-generated mockups from public executed works)
   const filteredPhotos = useMemo(() => {
     return INBOX_INVENTORY.filter((item: InventoryItem) => {
+      // Exclude AI-generated concept mockups from visitor-facing executed projects
+      if (item.categoryKey === 'brand_concept' || item.fileName.startsWith('Gemini_') || item.photoTypeEn.includes('AI Concept')) {
+        return false;
+      }
+
       // Category match
       if (selectedCategory !== 'all') {
         if (selectedCategory === 'painting_plastering') {

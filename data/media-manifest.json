@@ -3,28 +3,223 @@
     "video-01-owner-intro": {
       "url": "/assets/videos/video-01-owner-intro.mp4",
       "fileName": "video-01-owner-intro.mp4",
-      "updatedAt": "2026-10-29T23:50:00.000Z"
+      "updatedAt": "2026-11-08T12:00:00.000Z"
     },
     "video-02-client-interview": {
       "url": "/assets/videos/client-interview.mp4",
       "fileName": "client-interview.mp4",
-      "updatedAt": "2026-10-29T23:50:00.000Z"
+      "updatedAt": "2026-11-08T12:00:00.000Z"
     },
     "video-03-finishing-process": {
       "url": "/assets/videos/video-03-finishing-process.mp4",
       "fileName": "video-03-finishing-process.mp4",
-      "updatedAt": "2026-10-29T23:50:00.000Z"
+      "updatedAt": "2026-11-08T12:00:00.000Z"
     },
     "video-04-completed-apartment": {
       "url": "/assets/videos/video-04-completed-apartment.mp4",
       "fileName": "video-04-completed-apartment.mp4",
-      "updatedAt": "2026-10-29T23:50:00.000Z"
+      "updatedAt": "2026-11-08T12:00:00.000Z"
     },
     "video-05-commercial-project": {
       "url": "/assets/videos/video-05-commercial-project.mp4",
       "fileName": "video-05-commercial-project.mp4",
-      "updatedAt": "2026-10-29T23:50:00.000Z"
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "video-06-apartment-reception-tour": {
+      "url": "https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(1).mp4",
+      "fileName": "1107(1).mp4",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "video-07-interior-joinery-dressing": {
+      "url": "https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(2).mp4",
+      "fileName": "1107(2).mp4",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "video-08-site-prep-materials": {
+      "url": "https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(3).mp4",
+      "fileName": "1107(3).mp4",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "video-09-commercial-ductwork-mep": {
+      "url": "https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(5).mp4",
+      "fileName": "1107(5).mp4",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "video-10-floor-surface-grinding": {
+      "url": "https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(6).mp4",
+      "fileName": "1107(6).mp4",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "video-11-wall-putty-prep": {
+      "url": "https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(7).mp4",
+      "fileName": "1107(7).mp4",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "video-12-structural-masonry-site": {
+      "url": "https://dvddnoawgghiwlmwepzx.supabase.co/storage/v1/object/public/project-media/mohamed-hosny/videos/batch-02-2026/1107(9).mp4",
+      "fileName": "1107(9).mp4",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "apartment-stage-01": {
+      "url": "/assets/inbox/IMG-20261025-WA0102.jpg",
+      "fileName": "IMG-20261025-WA0102.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "apartment-stage-02": {
+      "url": "/assets/inbox/IMG-20261025-WA0103.jpg",
+      "fileName": "IMG-20261025-WA0103.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "apartment-stage-03": {
+      "url": "/assets/inbox/IMG-20261026-WA0014.jpg_20261026020533.jpg",
+      "fileName": "IMG-20261026-WA0014.jpg_20261026020533.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "apartment-stage-04": {
+      "url": "/assets/inbox/IMG-20261025-WA0077.jpg",
+      "fileName": "IMG-20261025-WA0077.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "plumbing-01": {
+      "url": "/assets/inbox/IMG-20261025-WA0105.jpg",
+      "fileName": "IMG-20261025-WA0105.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "plumbing-02": {
+      "url": "/assets/inbox/IMG-20261025-WA0107.jpg_20261026022012.jpg",
+      "fileName": "IMG-20261025-WA0107.jpg_20261026022012.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "plumbing-04": {
+      "url": "/assets/inbox/IMG-20261025-WA0106.jpg",
+      "fileName": "IMG-20261025-WA0106.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "plumbing-05": {
+      "url": "/assets/inbox/IMG-20261026-WA0013.jpg_20261026020654.jpg",
+      "fileName": "IMG-20261026-WA0013.jpg_20261026020654.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "electrical-01": {
+      "url": "/assets/inbox/IMG-20261025-WA0007.jpg",
+      "fileName": "IMG-20261025-WA0007.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "electrical-02": {
+      "url": "/assets/inbox/IMG-20261025-WA0056.jpg_20261026021341.jpg",
+      "fileName": "IMG-20261025-WA0056.jpg_20261026021341.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "electrical-03": {
+      "url": "/assets/inbox/IMG-20261025-WA0101.jpg",
+      "fileName": "IMG-20261025-WA0101.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "electrical-04": {
+      "url": "/assets/inbox/IMG-20261025-WA0029.jpg",
+      "fileName": "IMG-20261025-WA0029.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "electrical-05": {
+      "url": "/assets/inbox/IMG-20261025-WA0090 - Copy.jpg",
+      "fileName": "IMG-20261025-WA0090 - Copy.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "tiling-01": {
+      "url": "/assets/inbox/IMG-20261025-WA0006.jpg",
+      "fileName": "IMG-20261025-WA0006.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "tiling-02": {
+      "url": "/assets/inbox/IMG-20261025-WA0018.jpg_20261026021121.jpg",
+      "fileName": "IMG-20261025-WA0018.jpg_20261026021121.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "tiling-03": {
+      "url": "/assets/inbox/IMG-20261026-WA0012.jpg_20261026020407.jpg",
+      "fileName": "IMG-20261026-WA0012.jpg_20261026020407.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "tiling-04": {
+      "url": "/assets/inbox/IMG-20261026-WA0018.jpg_20261026020317.jpg",
+      "fileName": "IMG-20261026-WA0018.jpg_20261026020317.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "tiling-05": {
+      "url": "/assets/inbox/IMG-20261026-WA0020.jpg_20261026023447.jpg",
+      "fileName": "IMG-20261026-WA0020.jpg_20261026023447.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "gypsum-01": {
+      "url": "/assets/inbox/IMG-20261025-WA0047.jpg_20261026021719.jpg",
+      "fileName": "IMG-20261025-WA0047.jpg_20261026021719.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "gypsum-02": {
+      "url": "/assets/inbox/IMG-20261025-WA0057.jpg",
+      "fileName": "IMG-20261025-WA0057.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "gypsum-03": {
+      "url": "/assets/inbox/IMG-20261025-WA0064.jpg",
+      "fileName": "IMG-20261025-WA0064.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "gypsum-04": {
+      "url": "/assets/inbox/IMG-20261025-WA0077.jpg",
+      "fileName": "IMG-20261025-WA0077.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "painting-02": {
+      "url": "/assets/inbox/IMG-20261025-WA0067.jpg",
+      "fileName": "IMG-20261025-WA0067.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "painting-05": {
+      "url": "/assets/inbox/IMG-20261025-WA0089.jpg",
+      "fileName": "IMG-20261025-WA0089.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "interior-01": {
+      "url": "/assets/inbox/IMG-20261025-WA0050.jpg",
+      "fileName": "IMG-20261025-WA0050.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "interior-02": {
+      "url": "/assets/inbox/IMG-20261025-WA0061.jpg",
+      "fileName": "IMG-20261025-WA0061.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "interior-03": {
+      "url": "/assets/inbox/IMG-20261025-WA0045.jpg",
+      "fileName": "IMG-20261025-WA0045.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "interior-04": {
+      "url": "/assets/inbox/IMG-20261025-WA0046(1).jpg",
+      "fileName": "IMG-20261025-WA0046(1).jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "interior-05": {
+      "url": "/assets/inbox/IMG-20261025-WA0081.jpg",
+      "fileName": "IMG-20261025-WA0081.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "commercial-03": {
+      "url": "/assets/inbox/IMG-20261025-WA0069.jpg",
+      "fileName": "IMG-20261025-WA0069.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "commercial-04": {
+      "url": "/assets/inbox/IMG-20261025-WA0092.jpg",
+      "fileName": "IMG-20261025-WA0092.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
+    },
+    "commercial-05": {
+      "url": "/assets/inbox/IMG-20261025-WA0100.jpg",
+      "fileName": "IMG-20261025-WA0100.jpg",
+      "updatedAt": "2026-11-08T12:00:00.000Z"
     }
   },
-  "updatedAt": "2026-10-29T23:50:00.000Z"
+  "updatedAt": "2026-11-08T12:00:00.000Z"
 }

@@ -214,7 +214,7 @@ export default function App() {
         onOpenMediaSlotsModal={() => setIsMediaSlotsOpen(true)}
       />
 
-      {/* Floating WhatsApp Action Button with 01055865637 */}
+      {/* Floating WhatsApp Action Button with 01228744400 */}
       <FloatingWhatsAppButton
         currentLang={currentLang}
         onOpenWhatsApp={handleOpenWhatsApp}

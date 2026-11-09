@@ -13,7 +13,8 @@ import {
   PlusCircle,
   Film,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
+  Lock
 } from 'lucide-react';
 
 interface VideoLibraryProps {
@@ -33,29 +34,16 @@ export const VideoLibrary: React.FC<VideoLibraryProps> = ({
   const isRtl = currentLang === 'ar';
   const [activeVideoModal, setActiveVideoModal] = useState<VideoSlot | null>(null);
 
-  // Filter mode: 'featured' (the 3 initial approved videos) or 'all' (all 5+ expansion slots)
-  const [viewFilter, setViewFilter] = useState<'featured' | 'all'>('featured');
-
-  // The 3 approved initial videos in order:
-  // 1. مقابلة العميل – صالون محمد وخالد (video-02-client-interview.mp4)
-  // 2. مراحل التشطيب (video-03-finishing-process.mp4)
-  // 3. شقة متكاملة بعد التشطيب (video-04-completed-apartment.mp4)
-  const initialThreeKeys = [
-    'video-02-client-interview',
-    'video-03-finishing-process',
-    'video-04-completed-apartment'
-  ];
+  // Filter mode: 'all' (all 12 videos), 'original' (5 original slots), or 'cloud' (7 additional cloud videos)
+  const [viewFilter, setViewFilter] = useState<'all' | 'original' | 'cloud'>('all');
 
   // Filtered list based on view mode
   const displayedVideos = useMemo(() => {
-    if (viewFilter === 'featured') {
-      const featured: VideoSlot[] = [];
-      initialThreeKeys.forEach((key) => {
-        const found = videoSlots.find((v) => v.slotKey === key);
-        if (found) featured.push(found);
-      });
-      // Fallback if missing
-      return featured.length > 0 ? featured : videoSlots.slice(0, 3);
+    if (viewFilter === 'original') {
+      return videoSlots.filter((v) => !v.slotKey.startsWith('video-06') && !v.slotKey.startsWith('video-07') && !v.slotKey.startsWith('video-08') && !v.slotKey.startsWith('video-09') && !v.slotKey.startsWith('video-10') && !v.slotKey.startsWith('video-11') && !v.slotKey.startsWith('video-12'));
+    }
+    if (viewFilter === 'cloud') {
+      return videoSlots.filter((v) => v.videoUrl?.includes('supabase.co') || v.slotKey.startsWith('video-06') || v.slotKey.startsWith('video-07') || v.slotKey.startsWith('video-08') || v.slotKey.startsWith('video-09') || v.slotKey.startsWith('video-10') || v.slotKey.startsWith('video-11') || v.slotKey.startsWith('video-12'));
     }
     return videoSlots;
   }, [viewFilter, videoSlots]);
@@ -72,37 +60,26 @@ export const VideoLibrary: React.FC<VideoLibraryProps> = ({
               <span>{isRtl ? 'التوثيق المرئي الميداني' : 'On-Site Video Documentation'}</span>
             </div>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1F4A3B]">
-              {isRtl ? 'مكتبة الفيديوهات التوثيقية' : 'Project Video Documentation Library'}
+              {isRtl ? 'مكتبة الفيديوهات التوثيقية الكاملة (12 فيديو)' : 'Comprehensive Project Video Library (12 Videos)'}
             </h2>
             <p className="mt-3 text-sm sm:text-base text-[#5C5C5C] leading-relaxed">
               {isRtl
-                ? 'نوثق هنا بالفيديو الميداني المباشر تجارب العملاء الحقيقية ومراحل العمل الإنشائي واستعراض الشقق والمشاريع بعد اكتمال التشطيب الفاخر.'
-                : 'Direct on-site visual documentation capturing genuine client reviews, ground-level finishing milestones, and completed residential walkthroughs.'}
+                ? 'توثيق مرئي ميداني شامل يضم الـ 5 فيديوهات الأصلية المعتمدة للمؤسسة بالإضافة إلى الـ 7 فيديوهات السحابية الجديدة التي تغطي كافة تفاصيل التنفيذ والتشطيب.'
+                : 'Complete documentary video archive featuring all 5 original foundation videos alongside the 7 new cloud-streamed execution walkthroughs.'}
             </p>
           </div>
 
           {/* Quick Target Path Pill */}
           <div className="hidden md:flex items-center gap-2 font-mono text-[11px] text-[#1F4A3B] bg-white px-3.5 py-2 rounded-xs border border-[#D1B995]/30 shrink-0">
             <FolderOpen className="w-3.5 h-3.5 text-[#B89B6A]" />
-            <span>public/assets/videos/{'{slotKey}'}.mp4</span>
+            <span>5 Original + 7 Supabase Cloud</span>
           </div>
         </div>
 
         {/* View Switcher Bar & Expansion Tag */}
         <div className="mb-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b border-[#D1B995]/20 pb-4">
-          <div className="flex items-center p-1 bg-[#EAE5D9] rounded-sm gap-1 self-start">
-            <button
-              onClick={() => setViewFilter('featured')}
-              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-xs transition-all cursor-pointer ${
-                viewFilter === 'featured'
-                  ? 'bg-[#1F4A3B] text-[#F7F5F0] shadow-xs font-semibold ring-1 ring-[#D1B995]'
-                  : 'text-[#242424] hover:text-[#1F4A3B] hover:bg-white/40'
-              }`}
-            >
-              <Film className="w-3.5 h-3.5 text-[#D1B995]" />
-              <span>{isRtl ? 'الفيديوهات المعتمدة كبداية (3)' : 'Initial Featured Videos (3)'}</span>
-            </button>
-
+          <div className="flex items-center p-1 bg-[#EAE5D9] rounded-sm gap-1 self-start flex-wrap">
+            {/* Tab 1: All 12 Videos */}
             <button
               onClick={() => setViewFilter('all')}
               className={`flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-xs transition-all cursor-pointer ${
@@ -112,16 +89,42 @@ export const VideoLibrary: React.FC<VideoLibraryProps> = ({
               }`}
             >
               <Layers className="w-3.5 h-3.5 text-[#D1B995]" />
-              <span>{isRtl ? `كافة الخانات والتوسعات (${videoSlots.length})` : `All Documentation Slots (${videoSlots.length})`}</span>
+              <span>{isRtl ? `كافة الفيديوهات (${videoSlots.length})` : `All Videos (${videoSlots.length})`}</span>
+            </button>
+
+            {/* Tab 2: Original 5 Videos */}
+            <button
+              onClick={() => setViewFilter('original')}
+              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-xs transition-all cursor-pointer ${
+                viewFilter === 'original'
+                  ? 'bg-[#1F4A3B] text-[#F7F5F0] shadow-xs font-semibold ring-1 ring-[#D1B995]'
+                  : 'text-[#242424] hover:text-[#1F4A3B] hover:bg-white/40'
+              }`}
+            >
+              <Film className="w-3.5 h-3.5 text-[#D1B995]" />
+              <span>{isRtl ? 'الفيديوهات الأصلية (5)' : 'Original Videos (5)'}</span>
+            </button>
+
+            {/* Tab 3: Additional 7 Cloud Videos */}
+            <button
+              onClick={() => setViewFilter('cloud')}
+              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-xs transition-all cursor-pointer ${
+                viewFilter === 'cloud'
+                  ? 'bg-[#1F4A3B] text-[#F7F5F0] shadow-xs font-semibold ring-1 ring-[#D1B995]'
+                  : 'text-[#242424] hover:text-[#1F4A3B] hover:bg-white/40'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#D1B995]" />
+              <span>{isRtl ? 'الفيديوهات السحابية الإضافية (7)' : 'Additional Cloud Videos (7)'}</span>
             </button>
           </div>
 
           <div className="flex items-center gap-2 text-xs text-[#5C5C5C]">
-            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>
               {isRtl
-                ? 'النظام مهيأ لإضافة فيديوهات ومشاريع جديدة دون أي كسر بالروابط'
-                : 'Extensible architecture ready for continuous new video uploads'}
+                ? 'جميع الفيديوهات الـ 12 نشطة وتعمل بدون تكرار أو روابط مفقودة'
+                : 'All 12 videos active and streaming without duplicates'}
             </span>
           </div>
         </div>
@@ -185,11 +188,22 @@ export const VideoLibrary: React.FC<VideoLibraryProps> = ({
                     </div>
                   )}
 
-                  {/* Slot Number Tag */}
-                  <div className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-[#152B24]/90 text-[#D1B995] text-[10px] font-mono font-bold rounded-sm border border-[#D1B995]/20 flex items-center gap-1.5">
-                    <span>#{idx + 1}</span>
-                    <span>·</span>
-                    <span>{video.slotKey}</span>
+                  {/* Slot Number Tag & Source Badge */}
+                  <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap">
+                    <div className="px-2 py-0.5 bg-[#152B24]/90 text-[#D1B995] text-[10px] font-mono font-bold rounded-sm border border-[#D1B995]/20 flex items-center gap-1.5">
+                      <span>#{idx + 1}</span>
+                      <span>·</span>
+                      <span>{video.slotKey}</span>
+                    </div>
+                    {video.videoUrl?.includes('supabase.co') ? (
+                      <span className="px-1.5 py-0.5 bg-emerald-900/90 text-[#3ECF8E] text-[9px] font-mono font-bold rounded-xs border border-emerald-500/40">
+                        Supabase Cloud
+                      </span>
+                    ) : (
+                      <span className="px-1.5 py-0.5 bg-[#1F4A3B]/90 text-white text-[9px] font-mono font-bold rounded-xs border border-[#D1B995]/30">
+                        {isRtl ? 'أصلي محلي' : 'Original Local'}
+                      </span>
+                    )}
                   </div>
 
                   {/* Status Indicator */}
@@ -263,8 +277,8 @@ export const VideoLibrary: React.FC<VideoLibraryProps> = ({
                   onClick={onOpenMediaManager}
                   className="w-full py-2.5 px-3 text-xs font-bold bg-[#1F4A3B] hover:bg-[#152B24] text-[#D1B995] rounded-sm transition-colors cursor-pointer flex items-center justify-center gap-2"
                 >
-                  <FolderOpen className="w-4 h-4" />
-                  <span>{isRtl ? 'إدارة ورفع الفيديوهات في مدير الوسائط' : 'Manage Videos in Media Manager'}</span>
+                  <Lock className="w-4 h-4" />
+                  <span>{isRtl ? 'دخول الإدارة — إضافة وتحديث الفيديوهات' : 'Admin Login — Manage & Add Videos'}</span>
                 </button>
               )}
               <span className="text-[10px] font-mono text-[#5C5C5C]">

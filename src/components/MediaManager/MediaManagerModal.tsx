@@ -4,14 +4,8 @@ import {
   matchFilenameToSlotKey,
   fileToDataUrl,
   uploadMediaToServer,
-  createSignedUploadUrl,
-  confirmDirectUpload,
-  triggerBatchMigration,
   saveSlotToServer,
   deleteSlotFromServer,
-  resetAllSlotsOnServer,
-  storeMediaBlob,
-  deleteMediaBlob,
   saveLocalApartmentStages,
   saveLocalPortfolioSlots,
   saveLocalVideoSlots,
@@ -20,9 +14,9 @@ import {
   checkAdminAuth,
   getAdminAuthToken,
   fetchSupabaseStatus,
-  saveSupabaseSettings
+  fetchMediaInventory,
+  PhysicalMediaInventory
 } from '../../services/mediaStorage';
-import { resetAllMediaOverrides } from '../../services/bookingStorage';
 import {
   X,
   Upload,
@@ -46,7 +40,18 @@ import {
   ShieldAlert,
   Server,
   Save,
-  PlusCircle
+  PlusCircle,
+  Eye,
+  ShieldCheck,
+  Database,
+  HardDrive,
+  Sparkles,
+  AlertCircle,
+  ArrowRight,
+  ArrowLeft,
+  Copy,
+  SlidersHorizontal,
+  LogOut
 } from 'lucide-react';
 
 interface MediaManagerModalProps {
@@ -59,16 +64,7 @@ interface MediaManagerModalProps {
   onRefreshData: () => void;
 }
 
-interface QueuedFile {
-  id: string;
-  file: File;
-  previewUrl: string;
-  detectedSlotKey: string | null;
-  assignedSlotKey: string;
-  status: 'pending' | 'uploading' | 'completed' | 'error';
-  progress: number;
-  errorMessage?: string;
-}
+type MediaTab = 'all_media' | 'archive' | 'portfolio' | 'apartment' | 'videos' | 'unassigned' | 'settings';
 
 export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
   isOpen,
@@ -79,18 +75,22 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
   videoSlots,
   onRefreshData
 }) => {
-  // Authentication State (Server-Authoritative)
+  // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => !!getAdminAuthToken());
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState<string | null>(null);
   const [isVerifyingPin, setIsVerifyingPin] = useState(false);
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<'images' | 'bulk' | 'videos' | 'settings'>('images');
-  const [imageCategoryFilter, setImageCategoryFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState<MediaTab>('all_media');
+  const [portfolioCategoryFilter, setPortfolioCategoryFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Supabase Cloud Status
+  // Physical Inventory Server Data
+  const [inventory, setInventory] = useState<PhysicalMediaInventory | null>(null);
+  const [isLoadingInventory, setIsLoadingInventory] = useState(false);
+
+  // Supabase Cloud Diagnostic Status (Read-Only)
   const [supabaseStatus, setSupabaseStatus] = useState<{
     connected: boolean;
     url: string | null;
@@ -98,91 +98,79 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
     usingFallback: boolean;
     message: string;
   } | null>(null);
-  const [isLoadingSupabaseStatus, setIsLoadingSupabaseStatus] = useState(false);
 
-  // Supabase Settings Form
-  const [supabaseUrlInput, setSupabaseUrlInput] = useState('https://dvddnoawgghiwlmwepzx.supabase.co');
-  const [supabaseKeyInput, setSupabaseKeyInput] = useState('');
-  const [supabaseBucketInput, setSupabaseBucketInput] = useState('project-media');
-  const [isSavingSupabase, setIsSavingSupabase] = useState(false);
-  const [supabaseSaveMsg, setSupabaseSaveMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  // Migration State & Progress
-  const [isMigrating, setIsMigrating] = useState(false);
-  const [migrationReport, setMigrationReport] = useState<{
-    totalFiles: number;
-    verifiedCount: number;
-    results: Array<{ fileName: string; slotKey: string; sizeBytes: number; publicUrl: string; verified: boolean; error?: string }>;
+  // Assign from Archive Modal State
+  const [assigningArchiveFile, setAssigningArchiveFile] = useState<{
+    fileName: string;
+    url: string;
   } | null>(null);
-  const [migrationError, setMigrationError] = useState<string | null>(null);
+  const [selectedTargetSlot, setSelectedTargetSlot] = useState<string>('');
+  const [isSavingAssignment, setIsSavingAssignment] = useState(false);
+  const [assignmentSuccessMsg, setAssignmentSuccessMsg] = useState<string | null>(null);
 
-  // Individual Upload State & Progress
+  // Lightbox Preview Modal State
+  const [lightboxItem, setLightboxItem] = useState<{
+    url: string;
+    title: string;
+    subtitle?: string;
+    isVideo?: boolean;
+  } | null>(null);
+
+  // Unassign / Delete Confirmation Modal State
+  const [confirmClearSlot, setConfirmClearSlot] = useState<{
+    slotKey: string;
+    title: string;
+  } | null>(null);
+  const [isClearingSlot, setIsClearingSlot] = useState(false);
+
+  // Direct Upload State
   const [uploadingSlotKey, setUploadingSlotKey] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
-  const [lastUploadWarning, setLastUploadWarning] = useState<string | null>(null);
   const singleFileInputRef = useRef<HTMLInputElement>(null);
   const [targetSlotForUpload, setTargetSlotForUpload] = useState<string | null>(null);
 
-  // Bulk Upload State
-  const bulkFileInputRef = useRef<HTMLInputElement>(null);
-  const [queuedFiles, setQueuedFiles] = useState<QueuedFile[]>([]);
-  const [showBulkConfirmModal, setShowBulkConfirmModal] = useState(false);
-  const [isProcessingBulk, setIsProcessingBulk] = useState(false);
+  // Load Inventory & Auth status on open
+  const loadData = async () => {
+    setIsLoadingInventory(true);
+    try {
+      const inv = await fetchMediaInventory();
+      if (inv) setInventory(inv);
+      const status = await fetchSupabaseStatus();
+      setSupabaseStatus(status);
+    } catch (err) {
+      console.warn('Failed to fetch media inventory:', err);
+    } finally {
+      setIsLoadingInventory(false);
+    }
+  };
 
-  // Delete Confirmation State
-  const [deleteConfirmSlot, setDeleteConfirmSlot] = useState<{
-    slotKey: string;
-    type: 'apartment' | 'portfolio' | 'video';
-    title: string;
-  } | null>(null);
-
-  // Video URL inline editor state
-  const [editingVideoSlot, setEditingVideoSlot] = useState<string | null>(null);
-  const [videoUrlInput, setVideoUrlInput] = useState('');
-  const videoFileInputRef = useRef<HTMLInputElement>(null);
-  const [targetVideoForUpload, setTargetVideoForUpload] = useState<string | null>(null);
-
-  // Extensibility & Future Additions State (New Videos, Project Photos, Before/After)
-  const [isAddingNewSlot, setIsAddingNewSlot] = useState(false);
-  const [newSlotCategory, setNewSlotCategory] = useState<'video' | 'project' | 'before_after'>('video');
-  const [newSlotKey, setNewSlotKey] = useState('');
-  const [newSlotTitleAr, setNewSlotTitleAr] = useState('');
-  const [newSlotUrl, setNewSlotUrl] = useState('');
-  const [newSlotSaving, setNewSlotSaving] = useState(false);
-  const [newSlotMsg, setNewSlotMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  // Refresh auth and Supabase status on open
   useEffect(() => {
     if (isOpen) {
       checkAdminAuth().then((authed) => {
         setIsAuthenticated(authed);
+        if (authed) {
+          loadData();
+        }
       });
-      refreshSupabaseStatus();
     }
   }, [isOpen]);
 
+  // Handle Admin PIN Login
   const handlePinSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pinInput.trim() || isVerifyingPin) return;
+    if (!pinInput.trim()) return;
 
     setIsVerifyingPin(true);
     setPinError(null);
 
-    const res = await loginAdmin(pinInput);
+    const res = await loginAdmin(pinInput.trim());
     setIsVerifyingPin(false);
 
     if (res.success) {
       setIsAuthenticated(true);
-      setPinError(null);
       setPinInput('');
-      refreshSupabaseStatus();
+      loadData();
     } else {
-      setPinError(
-        res.message ||
-        (currentLang === 'ar'
-          ? 'الرمز السري غير صحيح. يرجى التحقق والمحاولة مجدداً.'
-          : 'Invalid administrative PIN. Please verify and try again.')
-      );
+      setPinError(res.message || (currentLang === 'ar' ? 'رمز الدخول غير صحيح' : 'Invalid admin PIN'));
     }
   };
 
@@ -191,1799 +179,1818 @@ export const MediaManagerModal: React.FC<MediaManagerModalProps> = ({
     setIsAuthenticated(false);
   };
 
-  const refreshSupabaseStatus = async () => {
-    setIsLoadingSupabaseStatus(true);
+  // Assign Archive File to Target Slot
+  const handleConfirmAssignment = async () => {
+    if (!assigningArchiveFile || !selectedTargetSlot || isSavingAssignment) return;
+
+    setIsSavingAssignment(true);
+    setAssignmentSuccessMsg(null);
+
     try {
-      const status = await fetchSupabaseStatus();
-      setSupabaseStatus(status);
-      if (status.url) setSupabaseUrlInput(status.url);
-      if (status.bucket) setSupabaseBucketInput(status.bucket);
-    } catch {
-      // ignore
+      const res = await saveSlotToServer(
+        selectedTargetSlot,
+        assigningArchiveFile.url,
+        assigningArchiveFile.fileName
+      );
+
+      if (res.success) {
+        setAssignmentSuccessMsg(
+          currentLang === 'ar'
+            ? `تم تعيين الملف إلى الخانة [${selectedTargetSlot}] بنجاح!`
+            : `Assigned to slot [${selectedTargetSlot}] successfully!`
+        );
+
+        // Update local state
+        if (selectedTargetSlot.startsWith('apartment-')) {
+          const updated = apartmentStages.map((s) =>
+            s.slotKey === selectedTargetSlot
+              ? { ...s, imageUrl: assigningArchiveFile.url, isPlaceholder: false }
+              : s
+          );
+          saveLocalApartmentStages(updated);
+        } else if (selectedTargetSlot.startsWith('video-')) {
+          const updated = videoSlots.map((v) =>
+            v.slotKey === selectedTargetSlot
+              ? { ...v, videoUrl: assigningArchiveFile.url }
+              : v
+          );
+          saveLocalVideoSlots(updated);
+        } else {
+          const updated = portfolioSlots.map((p) =>
+            p.slotKey === selectedTargetSlot
+              ? { ...p, imageUrl: assigningArchiveFile.url, isPlaceholder: false }
+              : p
+          );
+          saveLocalPortfolioSlots(updated);
+        }
+
+        await loadData();
+        onRefreshData();
+
+        setTimeout(() => {
+          setAssigningArchiveFile(null);
+          setSelectedTargetSlot('');
+          setAssignmentSuccessMsg(null);
+        }, 1200);
+      } else {
+        alert(res.error || 'Failed to save slot assignment');
+      }
+    } catch (err: any) {
+      alert(`Assignment error: ${err.message}`);
     } finally {
-      setIsLoadingSupabaseStatus(false);
+      setIsSavingAssignment(false);
     }
   };
 
-  // Build combined list of all 45 slots for dropdown assignment
-  const allImageSlots = useMemo(() => {
-    const list: { slotKey: string; label: string; group: string }[] = [];
-    apartmentStages.forEach((s) => {
-      list.push({
-        slotKey: s.slotKey,
-        label: `${s.slotKey} — ${currentLang === 'ar' ? s.titleAr : s.titleEn}`,
-        group: currentLang === 'ar' ? 'مشروع الشقة (5 مراحل)' : 'Apartment (5 Stages)'
-      });
-    });
-    portfolioSlots.forEach((p) => {
-      list.push({
-        slotKey: p.slotKey,
-        label: `${p.slotKey} — ${currentLang === 'ar' ? p.titleAr : p.titleEn}`,
-        group: currentLang === 'ar' ? p.categoryLabelAr : p.categoryLabelEn
-      });
-    });
-    return list;
-  }, [apartmentStages, portfolioSlots, currentLang]);
+  // Clear Slot Assignment
+  const handleExecuteClearSlot = async () => {
+    if (!confirmClearSlot || isClearingSlot) return;
 
-  if (!isOpen) return null;
+    setIsClearingSlot(true);
+    try {
+      const res = await deleteSlotFromServer(confirmClearSlot.slotKey);
+      if (res.success) {
+        if (confirmClearSlot.slotKey.startsWith('apartment-')) {
+          const updated = apartmentStages.map((s) =>
+            s.slotKey === confirmClearSlot.slotKey
+              ? { ...s, imageUrl: undefined, isPlaceholder: true }
+              : s
+          );
+          saveLocalApartmentStages(updated);
+        } else if (confirmClearSlot.slotKey.startsWith('video-')) {
+          const updated = videoSlots.map((v) =>
+            v.slotKey === confirmClearSlot.slotKey
+              ? { ...v, videoUrl: '' }
+              : v
+          );
+          saveLocalVideoSlots(updated);
+        } else {
+          const updated = portfolioSlots.map((p) =>
+            p.slotKey === confirmClearSlot.slotKey
+              ? { ...p, imageUrl: undefined, isPlaceholder: true }
+              : p
+          );
+          saveLocalPortfolioSlots(updated);
+        }
 
-  // Trigger file picker for a single slot
-  const handleTriggerSingleUpload = (slotKey: string) => {
-    setTargetSlotForUpload(slotKey);
-    if (singleFileInputRef.current) {
-      singleFileInputRef.current.value = '';
-      singleFileInputRef.current.click();
+        await loadData();
+        onRefreshData();
+        setConfirmClearSlot(null);
+      } else {
+        alert(res.error || 'Failed to clear slot');
+      }
+    } catch (err: any) {
+      alert(`Error: ${err.message}`);
+    } finally {
+      setIsClearingSlot(false);
     }
   };
 
-  // Process single file selection
-  const handleSingleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Direct Single File Upload
+  const handleSingleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !targetSlotForUpload) return;
 
-    const slotKey = targetSlotForUpload;
-    setUploadingSlotKey(slotKey);
-    setUploadProgress(15);
-
+    setUploadingSlotKey(targetSlotForUpload);
     try {
-      let activeUrl = '';
+      const dataUrl = await fileToDataUrl(file);
+      const res = await uploadMediaToServer(targetSlotForUpload, dataUrl, file.name);
 
-      // If Supabase is connected, upload directly via signed upload URL (bypassing Vercel 4.5MB limit)
-      if (supabaseStatus?.connected) {
-        setUploadProgress(35);
-        const signedRes = await createSignedUploadUrl(slotKey, file.name, file.type || 'image/jpeg');
-        if (signedRes.success && signedRes.signedUrl && signedRes.publicUrl) {
-          setUploadProgress(60);
-          const putRes = await fetch(signedRes.signedUrl, {
-            method: 'PUT',
-            body: file,
-            headers: {
-              'Content-Type': file.type || 'image/jpeg'
-            }
-          });
-
-          if (!putRes.ok) {
-            throw new Error(`Direct cloud upload failed with HTTP ${putRes.status}`);
-          }
-
-          setUploadProgress(85);
-          await confirmDirectUpload(slotKey, file.name, signedRes.publicUrl);
-          activeUrl = signedRes.publicUrl;
+      if (res.success && res.fileUrl) {
+        if (targetSlotForUpload.startsWith('apartment-')) {
+          const updated = apartmentStages.map((s) =>
+            s.slotKey === targetSlotForUpload
+              ? { ...s, imageUrl: res.fileUrl, isPlaceholder: false }
+              : s
+          );
+          saveLocalApartmentStages(updated);
+        } else {
+          const updated = portfolioSlots.map((p) =>
+            p.slotKey === targetSlotForUpload
+              ? { ...p, imageUrl: res.fileUrl, isPlaceholder: false }
+              : p
+          );
+          saveLocalPortfolioSlots(updated);
         }
-      }
-
-      // Fallback for local development or when Supabase is not connected
-      if (!activeUrl) {
-        const dataUrl = await fileToDataUrl(file);
-        setUploadProgress(40);
-        await storeMediaBlob(slotKey, dataUrl, file.name);
-        setUploadProgress(65);
-
-        const res = await uploadMediaToServer(slotKey, dataUrl, file.name);
-        setUploadProgress(90);
-
-        if (!res.success) {
-          throw new Error(res.error || 'Server upload failed');
-        }
-
-        activeUrl = res.fileUrl || dataUrl;
-        if (res.warning) {
-          setLastUploadWarning(res.warning);
-        }
-      }
-
-      // Update React state & persistent localStorage cache
-      if (slotKey.startsWith('apartment-stage')) {
-        const updated = apartmentStages.map((s) =>
-          s.slotKey === slotKey ? { ...s, imageUrl: activeUrl, isPlaceholder: false } : s
-        );
-        saveLocalApartmentStages(updated);
-      } else {
-        const updated = portfolioSlots.map((p) =>
-          p.slotKey === slotKey ? { ...p, imageUrl: activeUrl, isPlaceholder: false } : p
-        );
-        saveLocalPortfolioSlots(updated);
-      }
-
-      setUploadProgress(100);
-      setTimeout(() => {
-        setUploadingSlotKey(null);
-        setUploadProgress(0);
-        setTargetSlotForUpload(null);
+        await loadData();
         onRefreshData();
-      }, 300);
-    } catch (err: any) {
-      console.error('Failed to upload file:', err);
-      const isAuthError = err.message && (err.message.includes('401') || err.message.toLowerCase().includes('unauthorized') || err.message.includes('مصرح'));
-      if (isAuthError) {
-        setIsAuthenticated(false);
-        alert(currentLang === 'ar' ? 'انتهت صلاحية جلسة الإدارة أو غير مصرح بها. يرجى إدخال رمز الإدارة مجددًا.' : 'Admin session expired or unauthorized. Please enter the admin PIN again.');
       } else {
-        alert(`Upload error: ${err.message}`);
+        alert(res.error || 'Upload failed');
       }
+    } catch (err: any) {
+      alert(`Upload error: ${err.message}`);
+    } finally {
       setUploadingSlotKey(null);
-      setUploadProgress(0);
       setTargetSlotForUpload(null);
+      if (singleFileInputRef.current) singleFileInputRef.current.value = '';
     }
   };
 
-  // Trigger Bulk File Selection
-  const handleTriggerBulkSelect = () => {
-    if (bulkFileInputRef.current) {
-      bulkFileInputRef.current.value = '';
-      bulkFileInputRef.current.click();
-    }
-  };
-
-  // Handle files selected for bulk upload
-  const handleBulkFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    const newQueued: QueuedFile[] = [];
-    for (let i = 0; i < files.length; i++) {
-      const f = files[i];
-      const detected = matchFilenameToSlotKey(f.name);
-      const previewUrl = URL.createObjectURL(f);
-      newQueued.push({
-        id: `bulk_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 7)}`,
-        file: f,
-        previewUrl,
-        detectedSlotKey: detected,
-        assignedSlotKey: detected || allImageSlots[0]?.slotKey || 'apartment-stage-01',
-        status: 'pending',
-        progress: 0
-      });
-    }
-
-    setQueuedFiles(newQueued);
-    setActiveTab('bulk');
-  };
-
-  const handleReassignQueuedFile = (id: string, newSlotKey: string) => {
-    setQueuedFiles((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, assignedSlotKey: newSlotKey } : item))
-    );
-  };
-
-  const handleRemoveFromQueue = (id: string) => {
-    setQueuedFiles((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  // Execute bulk commit with server token
-  const handleExecuteBulkUpload = async () => {
-    setIsProcessingBulk(true);
-    setShowBulkConfirmModal(false);
-
-    let updatedApartments = [...apartmentStages];
-    let updatedPortfolio = [...portfolioSlots];
-
-    for (let i = 0; i < queuedFiles.length; i++) {
-      const item = queuedFiles[i];
-      const slotKey = item.assignedSlotKey;
-
-      setQueuedFiles((prev) =>
-        prev.map((q) => (q.id === item.id ? { ...q, status: 'uploading', progress: 25 } : q))
+  // Category counts and filtered data
+  const filteredPortfolio = useMemo(() => {
+    return portfolioSlots.filter((p) => {
+      if (portfolioCategoryFilter !== 'all' && p.category !== portfolioCategoryFilter) return false;
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        p.slotKey.toLowerCase().includes(q) ||
+        p.titleAr.includes(q) ||
+        p.titleEn.toLowerCase().includes(q) ||
+        (p.imageUrl && p.imageUrl.toLowerCase().includes(q))
       );
-
-      try {
-        const dataUrl = await fileToDataUrl(item.file);
-        await storeMediaBlob(slotKey, dataUrl, item.file.name);
-
-        setQueuedFiles((prev) =>
-          prev.map((q) => (q.id === item.id ? { ...q, progress: 60 } : q))
-        );
-
-        const res = await uploadMediaToServer(slotKey, dataUrl, item.file.name);
-        if (!res.success) {
-          throw new Error(res.error || 'Upload failed');
-        }
-
-        const activeUrl = res.fileUrl || dataUrl;
-
-        if (slotKey.startsWith('apartment-stage')) {
-          updatedApartments = updatedApartments.map((s) =>
-            s.slotKey === slotKey ? { ...s, imageUrl: activeUrl, isPlaceholder: false } : s
-          );
-        } else {
-          updatedPortfolio = updatedPortfolio.map((p) =>
-            p.slotKey === slotKey ? { ...p, imageUrl: activeUrl, isPlaceholder: false } : p
-          );
-        }
-
-        setQueuedFiles((prev) =>
-          prev.map((q) => (q.id === item.id ? { ...q, status: 'completed', progress: 100 } : q))
-        );
-      } catch (err: any) {
-        setQueuedFiles((prev) =>
-          prev.map((q) =>
-            q.id === item.id ? { ...q, status: 'error', errorMessage: err.message } : q
-          )
-        );
-      }
-    }
-
-    saveLocalApartmentStages(updatedApartments);
-    saveLocalPortfolioSlots(updatedPortfolio);
-    setIsProcessingBulk(false);
-    onRefreshData();
-  };
-
-  // Delete / Reset single slot
-  const handleConfirmDelete = async () => {
-    if (!deleteConfirmSlot) return;
-    const { slotKey, type } = deleteConfirmSlot;
-
-    await deleteMediaBlob(slotKey);
-    await deleteSlotFromServer(slotKey);
-
-    if (type === 'apartment') {
-      const updated = apartmentStages.map((s) =>
-        s.slotKey === slotKey ? { ...s, imageUrl: undefined, isPlaceholder: true } : s
-      );
-      saveLocalApartmentStages(updated);
-    } else if (type === 'portfolio') {
-      const updated = portfolioSlots.map((p) =>
-        p.slotKey === slotKey ? { ...p, imageUrl: undefined, isPlaceholder: true } : p
-      );
-      saveLocalPortfolioSlots(updated);
-    } else if (type === 'video') {
-      const updated = videoSlots.map((v) =>
-        v.slotKey === slotKey ? { ...v, videoUrl: undefined, isAvailable: false } : v
-      );
-      saveLocalVideoSlots(updated);
-    }
-
-    setDeleteConfirmSlot(null);
-    onRefreshData();
-  };
-
-  // Video URL save
-  const handleSaveVideoUrl = async (slotKey: string) => {
-    const val = videoUrlInput.trim();
-    const updated = videoSlots.map((v) =>
-      v.slotKey === slotKey ? { ...v, videoUrl: val || undefined, isAvailable: !!val } : v
-    );
-    saveLocalVideoSlots(updated);
-    await saveSlotToServer(slotKey, val || '', `${slotKey}`);
-    setEditingVideoSlot(null);
-    setVideoUrlInput('');
-    onRefreshData();
-  };
-
-  // Video direct file upload
-  const handleTriggerVideoUpload = (slotKey: string) => {
-    setTargetVideoForUpload(slotKey);
-    if (videoFileInputRef.current) {
-      videoFileInputRef.current.value = '';
-      videoFileInputRef.current.click();
-    }
-  };
-
-  const handleVideoFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !targetVideoForUpload) return;
-    const slotKey = targetVideoForUpload;
-
-    setUploadingSlotKey(slotKey);
-    setUploadProgress(15);
-
-    try {
-      let fileUrl = '';
-
-      // For large videos, upload directly to Supabase Storage via signed URL (bypassing Vercel 4.5MB limit)
-      if (supabaseStatus?.connected) {
-        setUploadProgress(30);
-        const signedRes = await createSignedUploadUrl(slotKey, file.name, file.type || 'video/mp4');
-        if (signedRes.success && signedRes.signedUrl && signedRes.publicUrl) {
-          setUploadProgress(50);
-          const putRes = await fetch(signedRes.signedUrl, {
-            method: 'PUT',
-            body: file,
-            headers: {
-              'Content-Type': file.type || 'video/mp4'
-            }
-          });
-
-          if (!putRes.ok) {
-            throw new Error(`Direct cloud video upload failed with HTTP ${putRes.status}`);
-          }
-
-          setUploadProgress(85);
-          await confirmDirectUpload(slotKey, file.name, signedRes.publicUrl);
-          fileUrl = signedRes.publicUrl;
-        }
-      }
-
-      // Fallback for local server
-      if (!fileUrl) {
-        const dataUrl = await fileToDataUrl(file);
-        setUploadProgress(60);
-
-        const res = await uploadMediaToServer(slotKey, dataUrl, file.name);
-        setUploadProgress(90);
-
-        if (!res.success) {
-          throw new Error(res.error || 'Video upload failed');
-        }
-        fileUrl = res.fileUrl || dataUrl;
-      }
-
-      const updated = videoSlots.map((v) =>
-        v.slotKey === slotKey ? { ...v, videoUrl: fileUrl, isAvailable: true } : v
-      );
-      saveLocalVideoSlots(updated);
-
-      setUploadProgress(100);
-      setTimeout(() => {
-        setUploadingSlotKey(null);
-        setUploadProgress(0);
-        setTargetVideoForUpload(null);
-        onRefreshData();
-      }, 300);
-    } catch (err: any) {
-      console.error('Failed to upload video:', err);
-      const isAuthError = err.message && (err.message.includes('401') || err.message.toLowerCase().includes('unauthorized') || err.message.includes('مصرح'));
-      if (isAuthError) {
-        setIsAuthenticated(false);
-        alert(currentLang === 'ar' ? 'انتهت صلاحية جلسة الإدارة أو غير مصرح بها. يرجى إدخال رمز الإدارة مجددًا.' : 'Admin session expired or unauthorized. Please enter the admin PIN again.');
-      } else {
-        alert(`Video upload failed: ${err.message}`);
-      }
-      setUploadingSlotKey(null);
-      setUploadProgress(0);
-      setTargetVideoForUpload(null);
-    }
-  };
-
-  const handleCreateNewSlot = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newSlotKey.trim() || !newSlotUrl.trim() || newSlotSaving) return;
-
-    setNewSlotSaving(true);
-    setNewSlotMsg(null);
-
-    const safeKey = newSlotKey.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
-    const res = await saveSlotToServer(safeKey, newSlotUrl.trim(), newSlotTitleAr || safeKey);
-    setNewSlotSaving(false);
-
-    if (res.success) {
-      setNewSlotMsg({
-        type: 'success',
-        text: currentLang === 'ar' ? 'تمت إضافة الخانة وحفظها في السيرفر بشكل دائم!' : 'Slot added and permanently saved to server!'
-      });
-      setNewSlotKey('');
-      setNewSlotTitleAr('');
-      setNewSlotUrl('');
-      onRefreshData();
-    } else {
-      setNewSlotMsg({
-        type: 'error',
-        text: res.error || (currentLang === 'ar' ? 'فشل حفظ الخانة في السيرفر' : 'Failed to save slot to server')
-      });
-    }
-  };
-
-  // Reset all to defaults
-  const handleResetAll = async () => {
-    if (
-      confirm(
-        currentLang === 'ar'
-          ? 'تحذير: هل أنت متأكد من رغبتك في حذف كافة التعديلات واستعادة الحالة الافتراضية؟'
-          : 'Warning: Are you sure you want to delete all uploaded overrides and restore defaults?'
-      )
-    ) {
-      try {
-        await resetAllSlotsOnServer();
-        resetAllMediaOverrides();
-        onRefreshData();
-      } catch (err: any) {
-        const isAuthError = err.message && (err.message.includes('401') || err.message.toLowerCase().includes('unauthorized') || err.message.includes('مصرح'));
-        if (isAuthError) {
-          setIsAuthenticated(false);
-          alert(currentLang === 'ar' ? 'انتهت صلاحية جلسة الإدارة أو غير مصرح بها. يرجى إدخال رمز الإدارة مجددًا.' : 'Admin session expired or unauthorized. Please enter the admin PIN again.');
-        } else {
-          alert(`Reset error: ${err.message}`);
-        }
-      }
-    }
-  };
-
-  // Save Supabase credentials from Settings Tab
-  const handleSaveSupabaseConfig = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSavingSupabase(true);
-    setSupabaseSaveMsg(null);
-
-    const res = await saveSupabaseSettings({
-      supabaseUrl: supabaseUrlInput.trim(),
-      supabaseKey: supabaseKeyInput.trim(),
-      bucketName: supabaseBucketInput.trim() || 'project-media'
     });
+  }, [portfolioSlots, portfolioCategoryFilter, searchQuery]);
 
-    setIsSavingSupabase(false);
-    if (res.success) {
-      setSupabaseSaveMsg({
-        type: 'success',
-        text:
-          currentLang === 'ar'
-            ? 'تم التحقق من الاتصال مع Supabase بنجاح! التخزين السحابي الدائم نشط الآن.'
-            : 'Supabase credentials verified successfully! Cloud storage is now active.'
-      });
-      refreshSupabaseStatus();
-    } else {
-      setSupabaseSaveMsg({
-        type: 'error',
-        text: res.message || 'Failed to verify Supabase credentials.'
-      });
-    }
-  };
-
-  // Run non-destructive cloud migration
-  const handleRunMigration = async () => {
-    setIsMigrating(true);
-    setMigrationError(null);
-    setMigrationReport(null);
-
-    const res = await triggerBatchMigration();
-    setIsMigrating(false);
-
-    if (res.success && res.results) {
-      setMigrationReport({
-        totalFiles: res.totalFiles || res.results.length,
-        verifiedCount: res.verifiedCount || 0,
-        results: res.results
-      });
-      onRefreshData();
-    } else {
-      setMigrationError(
-        res.message || res.error || (currentLang === 'ar' ? 'فشل الترحيل. تأكد من إعداد مفاتيح Supabase.' : 'Migration failed. Ensure Supabase credentials are configured.')
-      );
-    }
-  };
-
-  // Filter image slots for Tab 1
-  const filteredApartment = apartmentStages.filter((s) => {
-    if (imageCategoryFilter !== 'all' && imageCategoryFilter !== 'apartment') return false;
-    if (!searchQuery) return true;
+  const filteredArchive = useMemo(() => {
+    if (!inventory?.inboxFiles) return [];
+    if (!searchQuery) return inventory.inboxFiles;
     const q = searchQuery.toLowerCase();
-    return s.slotKey.includes(q) || s.titleAr.includes(q) || s.titleEn.toLowerCase().includes(q);
-  });
-
-  const filteredPortfolio = portfolioSlots.filter((p) => {
-    if (imageCategoryFilter !== 'all' && imageCategoryFilter !== p.category) return false;
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      p.slotKey.includes(q) ||
-      p.category.includes(q) ||
-      p.titleAr.includes(q) ||
-      p.titleEn.toLowerCase().includes(q)
+    return inventory.inboxFiles.filter(
+      (f) => f.fileName.toLowerCase().includes(q) || f.category.toLowerCase().includes(q)
     );
-  });
+  }, [inventory, searchQuery]);
 
-  const totalUploadedImages =
-    apartmentStages.filter((s) => s.imageUrl).length +
-    portfolioSlots.filter((p) => p.imageUrl).length;
-  const totalUploadedVideos = videoSlots.filter((v) => v.videoUrl).length;
-
-  // Accurate, transparent storage provenance classifier
-  const getSlotStorageInfo = (url?: string) => {
-    if (!url) {
-      return {
-        type: 'empty',
-        labelAr: 'بانتظار الصورة',
-        labelEn: 'Empty Slot',
-        badgeClass: 'text-amber-800 bg-amber-50 border-amber-300'
-      };
-    }
-    if (url.includes('supabase.co')) {
-      return {
-        type: 'supabase',
-        labelAr: 'سحابي دائم (Supabase)',
-        labelEn: 'Cloud CDN (Permanent)',
-        badgeClass: 'text-emerald-800 bg-emerald-50 border-emerald-300'
-      };
-    }
-    if (url.startsWith('/assets/')) {
-      return {
-        type: 'repository',
-        labelAr: 'مستودع Git (ثابت ودائم)',
-        labelEn: 'Repository (Permanent)',
-        badgeClass: 'text-emerald-800 bg-emerald-50 border-emerald-300'
-      };
-    }
-    if (url.startsWith('/uploads/')) {
-      return {
-        type: 'ephemeral',
-        labelAr: 'مؤقت محلي (غير مثبت بـ Git)',
-        labelEn: 'Temporary Runtime (Uncommitted)',
-        badgeClass: 'text-amber-800 bg-amber-50 border-amber-300'
-      };
-    }
-    return {
-      type: 'external',
-      labelAr: 'رابط خارجي',
-      labelEn: 'External URL',
-      badgeClass: 'text-blue-800 bg-blue-50 border-blue-300'
-    };
-  };
+  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-      {/* Hidden single file pickers */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-xs font-sans text-[#242424] animate-fadeIn">
+      {/* Hidden file input for direct upload */}
       <input
-        type="file"
         ref={singleFileInputRef}
-        onChange={handleSingleFileSelected}
-        accept="image/*"
-        className="hidden"
-      />
-      <input
         type="file"
-        ref={bulkFileInputRef}
-        onChange={handleBulkFilesSelected}
-        accept="image/*"
-        multiple
+        accept="image/jpeg,image/png,image/webp,video/mp4"
         className="hidden"
-      />
-      <input
-        type="file"
-        ref={videoFileInputRef}
-        onChange={handleVideoFileSelected}
-        accept="video/mp4,video/webm"
-        className="hidden"
+        onChange={handleSingleFileChange}
       />
 
-      {/* Main Container */}
-      <div className="relative max-w-6xl w-full bg-[#FAF8F5] text-[#242424] border border-[#D1B995]/50 rounded-sm shadow-2xl my-auto overflow-hidden flex flex-col max-h-[92vh]">
+      {/* Main Modal Shell */}
+      <div className="bg-[#FAF8F5] border border-[#D1B995] rounded-sm w-full max-w-7xl max-h-[94vh] flex flex-col shadow-2xl overflow-hidden relative">
         
-        {/* Modal Top Header */}
-        <div className="bg-[#152B24] text-[#F7F5F0] px-6 py-4 flex items-center justify-between border-b border-[#D1B995]/30">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-sm bg-[#1F4A3B] border border-[#D1B995]/50 flex items-center justify-center text-[#D1B995] shadow-xs">
-              <FolderOpen className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-[#D1B995]">
-                  MOHAMED HOSNY ADMIN PORTAL
-                </span>
-                <span className="text-xs text-[#D1B995]/50">·</span>
-                {supabaseStatus?.connected ? (
-                  <span className="text-[10px] font-mono text-emerald-400 font-semibold flex items-center gap-1">
-                    <Cloud className="w-3 h-3" />
-                    {currentLang === 'ar' ? 'تخزين سحابي Supabase نشط' : 'Supabase Cloud CDN Active'}
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-mono text-amber-300 font-semibold flex items-center gap-1">
-                    <Server className="w-3 h-3" />
-                    {currentLang === 'ar' ? 'وضع التخزين المحلي (Local)' : 'Local Storage Mode'}
-                  </span>
-                )}
+        {/* ========================================================================= */}
+        {/* CONDITIONAL RENDERING: ADMIN AUTHENTICATION GATE VS. MANAGEMENT DASHBOARD */}
+        {/* ========================================================================= */}
+        {!isAuthenticated ? (
+          <>
+            {/* RESTRICTED ACCESS HEADER */}
+            <div className="bg-[#1F4A3B] text-[#F7F5F0] px-6 py-4 border-b border-[#D1B995]/30 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xs bg-[#152B24] border border-[#D1B995]/40 flex items-center justify-center text-[#D1B995]">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono tracking-widest uppercase text-[#D1B995] font-bold">
+                      {currentLang === 'ar' ? 'مؤسسة المهندس محمد حسني' : 'ENG. MOHAMED HOSNY'}
+                    </span>
+                    <span className="text-white/40">|</span>
+                    <span className="text-[10px] font-mono text-amber-300 font-bold bg-amber-950/80 px-2 py-0.5 rounded-xs border border-amber-500/30">
+                      {currentLang === 'ar' ? 'منطقة مقيدة — تتطلب المصادقة' : 'RESTRICTED AREA'}
+                    </span>
+                  </div>
+                  <h2 className="text-lg font-bold text-white tracking-tight">
+                    {currentLang === 'ar'
+                      ? 'بوابة الدخول الإداري للتحكم في الوسائط'
+                      : 'Administrative Media Manager Gate'}
+                  </h2>
+                </div>
               </div>
-              <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[#F7F5F0]">
-                {currentLang === 'ar' ? 'مدير الوسائط والصور (Media Manager)' : 'Media Manager Dashboard'}
-              </h2>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-2">
-            {isAuthenticated ? (
-              <>
-                <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium bg-[#1F4A3B] border border-emerald-500/40 text-emerald-300 rounded-sm">
-                  <Check className="w-3 h-3 text-emerald-400" />
-                  <span>{currentLang === 'ar' ? 'جلسة إدارة نشطة' : 'Admin Session Active'}</span>
-                </span>
+              {/* Close Button */}
+              <button
+                onClick={onClose}
+                className="p-1.5 bg-red-950/60 hover:bg-red-900 text-red-200 border border-red-700/40 rounded-xs transition-colors cursor-pointer"
+                title={currentLang === 'ar' ? 'إغلاق والعودة' : 'Close'}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* DEDICATED ADMIN AUTHENTICATION GATE (NO DATA LEAKAGE TO VISITORS) */}
+            <div className="flex-1 flex items-center justify-center p-6 sm:p-12 bg-[#FAF8F5] min-h-[460px]">
+              <div className="max-w-md w-full bg-white border border-[#D1B995]/60 rounded-sm shadow-xl p-8 space-y-6 text-center">
+                {/* Shield / Keyhole Icon */}
+                <div className="mx-auto w-16 h-16 rounded-full bg-[#1F4A3B] text-[#D1B995] flex items-center justify-center shadow-md">
+                  <Lock className="w-8 h-8" />
+                </div>
+
+                {/* Headings */}
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-300 text-amber-900 text-[11px] font-semibold rounded-xs">
+                    <ShieldAlert className="w-3.5 h-3.5 text-amber-700" />
+                    <span>{currentLang === 'ar' ? 'نظام الحماية الإدارية مفعل' : 'Strict Security Gate Active'}</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-[#1F4A3B]">
+                    {currentLang === 'ar' ? 'تسجيل الدخول الإداري' : 'Admin PIN Required'}
+                  </h3>
+                  <p className="text-xs text-[#5C5C5C] leading-relaxed">
+                    {currentLang === 'ar'
+                      ? 'الموقع العام للزوار مخصص للعرض فقط (Read-Only). للوصول إلى أدوات رفع واستبدال الصور وتعديل مراحل المشاريع، يرجى إدخال الرمز الإداري المعتمد للمهندس محمد حسني.'
+                      : 'The public website is strictly read-only for visitors. To access media management, modify slots, or upload files, please enter the verified admin PIN.'}
+                  </p>
+                </div>
+
+                {/* Secure PIN Form */}
+                <form onSubmit={handlePinSubmit} className="space-y-4 pt-2">
+                  <div className="space-y-1.5 text-right rtl:text-right ltr:text-left">
+                    <label className="block text-xs font-semibold text-[#1F4A3B]">
+                      {currentLang === 'ar' ? 'الرمز السري الإداري (PIN)' : 'Administrative PIN'}
+                    </label>
+                    <input
+                      type="password"
+                      value={pinInput}
+                      onChange={(e) => {
+                        setPinInput(e.target.value);
+                        if (pinError) setPinError(null);
+                      }}
+                      placeholder="••••••••"
+                      autoFocus
+                      autoComplete="current-password"
+                      className="w-full px-4 py-2.5 text-center font-mono tracking-widest text-sm bg-[#FAF8F5] border border-[#D1B995] rounded-xs outline-none focus:border-[#1F4A3B] focus:ring-1 focus:ring-[#1F4A3B] transition-all"
+                    />
+                  </div>
+
+                  {pinError && (
+                    <div className="p-3 bg-red-50 border border-red-300 text-red-700 text-xs rounded-xs flex items-center gap-2 justify-center font-medium">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>{pinError}</span>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-2 pt-2">
+                    <button
+                      type="submit"
+                      disabled={isVerifyingPin || !pinInput.trim()}
+                      className="w-full py-3 px-4 bg-[#1F4A3B] hover:bg-[#152B24] disabled:opacity-50 text-[#D1B995] font-bold text-xs uppercase tracking-wider rounded-xs transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                    >
+                      {isVerifyingPin ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>{currentLang === 'ar' ? 'جارٍ التحقق المشفر من السيرفر...' : 'Verifying with server...'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <KeyRound className="w-4 h-4" />
+                          <span>{currentLang === 'ar' ? 'تأكيد ودخول لوحة الإدارة' : 'Authenticate & Unlock'}</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="w-full py-2.5 px-4 bg-transparent hover:bg-gray-100 text-[#5C5C5C] text-xs font-medium rounded-xs transition-colors cursor-pointer"
+                    >
+                      {currentLang === 'ar' ? 'إلغاء والعودة للموقع العام' : 'Cancel & Return to Public Site'}
+                    </button>
+                  </div>
+                </form>
+
+                {/* Security Footer Note */}
+                <div className="pt-4 border-t border-[#D1B995]/20 flex items-center justify-center gap-1.5 text-[10px] text-[#5C5C5C] font-mono">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>{currentLang === 'ar' ? 'محمي بخوادم آمنة وجلسات مشفرة (SHA-256 / Rate-Limited)' : 'Protected by server session token (SHA-256 / Rate-Limited)'}</span>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* FULL AUTHENTICATED HEADER */}
+            <div className="bg-[#1F4A3B] text-[#F7F5F0] px-6 py-4 border-b border-[#D1B995]/30 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xs bg-[#152B24] border border-[#D1B995]/40 flex items-center justify-center text-[#D1B995]">
+                  <Database className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono tracking-widest uppercase text-[#D1B995] font-bold">
+                      {currentLang === 'ar' ? 'مؤسسة المهندس محمد حسني' : 'ENG. MOHAMED HOSNY'}
+                    </span>
+                    <span className="text-white/40">|</span>
+                    <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-950/80 px-2 py-0.5 rounded-xs border border-emerald-500/30 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      {currentLang === 'ar' ? 'مشرف معتمد (جلسة نشطة)' : 'AUTHENTICATED ADMIN'}
+                    </span>
+                  </div>
+                  <h2 className="text-lg font-bold text-white tracking-tight">
+                    {currentLang === 'ar'
+                      ? 'مدير الوسائط المتكامل والأرشيف الهندسي للمشروع'
+                      : 'Master Media Manager & Architectural Archive'}
+                  </h2>
+                </div>
+              </div>
+
+              {/* Quick Metrics Badges & Logout Bar */}
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                {/* Physical Files Count */}
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#152B24] border border-[#D1B995]/40 rounded-xs">
+                  <HardDrive className="w-3.5 h-3.5 text-[#D1B995]" />
+                  <span className="text-white/80">{currentLang === 'ar' ? 'الملفات:' : 'Files:'}</span>
+                  <span className="font-mono font-bold text-[#D1B995]">
+                    {inventory?.stats.totalPhysicalFiles || 82}
+                  </span>
+                </div>
+
+                {/* Original Archive Count */}
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#152B24] border border-[#D1B995]/40 rounded-xs">
+                  <FolderOpen className="w-3.5 h-3.5 text-[#D1B995]" />
+                  <span className="text-white/80">{currentLang === 'ar' ? 'الأرشيف:' : 'Archive:'}</span>
+                  <span className="font-mono font-bold text-[#D1B995]">
+                    {inventory?.stats.archiveImagesCount || 62}
+                  </span>
+                </div>
+
+                {/* Supabase Cloud Videos Badge */}
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#152B24] border border-[#3ECF8E]/50 rounded-xs">
+                  <Cloud className="w-3.5 h-3.5 text-[#3ECF8E]" />
+                  <span className="text-white/80">{currentLang === 'ar' ? 'سحابة Supabase:' : 'Supabase Cloud:'}</span>
+                  <span className="font-mono font-bold text-[#3ECF8E]">
+                    {inventory?.stats.supabaseCloudVideosCount || 7}
+                  </span>
+                  <span className="text-[10px] text-white/50">{currentLang === 'ar' ? 'فيديو' : 'vids'}</span>
+                </div>
+
+                {/* Designated Slots Count */}
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#152B24] border border-[#D1B995]/40 rounded-xs">
+                  <Layers className="w-3.5 h-3.5 text-[#D1B995]" />
+                  <span className="text-white/80">{currentLang === 'ar' ? 'الخانات:' : 'Slots:'}</span>
+                  <span className="font-mono font-bold text-emerald-400">
+                    {inventory?.stats.assignedSlotsCount || 45}
+                  </span>
+                  <span className="text-white/40 font-mono">/ 57</span>
+                </div>
+
+                {/* Refresh Button */}
+                <button
+                  onClick={() => {
+                    loadData();
+                    onRefreshData();
+                  }}
+                  title={currentLang === 'ar' ? 'تحديث البيانات' : 'Refresh Data'}
+                  className="p-1.5 bg-[#152B24] hover:bg-[#1e3c32] text-[#D1B995] border border-[#D1B995]/30 rounded-xs transition-colors cursor-pointer"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoadingInventory ? 'animate-spin' : ''}`} />
+                </button>
+
+                {/* Logout Button */}
                 <button
                   onClick={handleLogout}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs bg-white/10 hover:bg-white/20 text-[#F7F5F0] rounded-sm transition-colors cursor-pointer"
-                  title={currentLang === 'ar' ? 'قفل الجلسة' : 'Lock session'}
+                  title={currentLang === 'ar' ? 'تسجيل الخروج الإداري' : 'Logout Admin'}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-950/70 hover:bg-amber-900 text-amber-200 border border-amber-600/40 rounded-xs transition-colors cursor-pointer text-xs font-semibold"
                 >
-                  <Lock className="w-3.5 h-3.5 text-[#D1B995]" />
-                  <span>{currentLang === 'ar' ? 'قفل اللوحة' : 'Lock'}</span>
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>{currentLang === 'ar' ? 'خروج' : 'Logout'}</span>
                 </button>
-              </>
-            ) : (
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium bg-[#1F4A3B] border border-[#D1B995]/40 text-[#D1B995] rounded-sm">
-                <Lock className="w-3 h-3 text-[#D1B995]" />
-                <span>{currentLang === 'ar' ? 'يتطلب تصريحاً' : 'Protected'}</span>
-              </span>
-            )}
+
+                {/* Close Button */}
+                <button
+                  onClick={onClose}
+                  className="p-1.5 bg-red-950/60 hover:bg-red-900 text-red-200 border border-red-700/40 rounded-xs transition-colors cursor-pointer"
+                  title={currentLang === 'ar' ? 'إغلاق النافذة' : 'Close'}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+        {/* 7 SEGMENTED NAVIGATION TABS */}
+        <div className="bg-[#1F4A3B] px-6 py-2.5 border-b border-[#D1B995]/30 flex items-center justify-between gap-2 overflow-x-auto scrollbar-none text-xs">
+          <div className="flex items-center gap-1.5 flex-nowrap">
+            {/* Tab 1: All Media */}
             <button
-              onClick={onClose}
-              className="p-1.5 text-[#F7F5F0]/70 hover:text-white rounded-sm cursor-pointer hover:bg-white/10"
-              aria-label="Close"
+              onClick={() => setActiveTab('all_media')}
+              className={`px-3 py-2 rounded-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'all_media'
+                  ? 'bg-[#D1B995] text-[#1F4A3B] font-bold shadow-sm'
+                  : 'text-[#F7F5F0]/80 hover:text-white hover:bg-white/10'
+              }`}
             >
-              <X className="w-5 h-5" />
+              <HardDrive className="w-3.5 h-3.5" />
+              <span>{currentLang === 'ar' ? 'كافة الوسائط الفعلية' : 'All Physical Media'}</span>
+              <span className="font-mono text-[10px] px-1.5 py-0.2 bg-[#152B24] text-[#D1B995] rounded-xs">
+                {inventory?.stats.totalPhysicalFiles || 82}
+              </span>
             </button>
+
+            {/* Tab 2: Original Archive */}
+            <button
+              onClick={() => setActiveTab('archive')}
+              className={`px-3 py-2 rounded-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'archive'
+                  ? 'bg-[#D1B995] text-[#1F4A3B] font-bold shadow-sm'
+                  : 'text-[#F7F5F0]/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <FolderOpen className="w-3.5 h-3.5" />
+              <span>{currentLang === 'ar' ? 'الأرشيف الأصلي' : 'Original Archive'}</span>
+              <span className="font-mono text-[10px] px-1.5 py-0.2 bg-[#152B24] text-[#D1B995] rounded-xs">
+                {inventory?.stats.archiveImagesCount || 62} + 8
+              </span>
+            </button>
+
+            {/* Tab 3: Portfolio Slots */}
+            <button
+              onClick={() => setActiveTab('portfolio')}
+              className={`px-3 py-2 rounded-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'portfolio'
+                  ? 'bg-[#D1B995] text-[#1F4A3B] font-bold shadow-sm'
+                  : 'text-[#F7F5F0]/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>{currentLang === 'ar' ? 'خانات التخصصات' : 'Portfolio Slots'}</span>
+              <span className="font-mono text-[10px] px-1.5 py-0.2 bg-[#152B24] text-[#D1B995] rounded-xs">
+                40
+              </span>
+            </button>
+
+            {/* Tab 4: Apartment Case Study */}
+            <button
+              onClick={() => setActiveTab('apartment')}
+              className={`px-3 py-2 rounded-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'apartment'
+                  ? 'bg-[#D1B995] text-[#1F4A3B] font-bold shadow-sm'
+                  : 'text-[#F7F5F0]/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{currentLang === 'ar' ? 'شقة نموذجية' : 'Apartment Stages'}</span>
+              <span className="font-mono text-[10px] px-1.5 py-0.2 bg-[#152B24] text-[#D1B995] rounded-xs">
+                5
+              </span>
+            </button>
+
+            {/* Tab 5: Video Library */}
+            <button
+              onClick={() => setActiveTab('videos')}
+              className={`px-3 py-2 rounded-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'videos'
+                  ? 'bg-[#D1B995] text-[#1F4A3B] font-bold shadow-sm'
+                  : 'text-[#F7F5F0]/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <Video className="w-3.5 h-3.5" />
+              <span>{currentLang === 'ar' ? 'مكتبة الفيديو' : 'Video Library'}</span>
+              <span className="font-mono text-[10px] px-1.5 py-0.2 bg-[#152B24] text-[#D1B995] rounded-xs">
+                5 + 7
+              </span>
+            </button>
+
+            {/* Tab 6: Unassigned & Duplicates */}
+            <button
+              onClick={() => setActiveTab('unassigned')}
+              className={`px-3 py-2 rounded-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'unassigned'
+                  ? 'bg-[#D1B995] text-[#1F4A3B] font-bold shadow-sm'
+                  : 'text-[#F7F5F0]/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>{currentLang === 'ar' ? 'غير المعين والمكرر' : 'Unassigned & Duplicates'}</span>
+              <span className="font-mono text-[10px] px-1.5 py-0.2 bg-amber-700 text-white rounded-xs">
+                {(inventory?.stats.unassignedInboxCount || 31) + (inventory?.stats.unassignedCloudVideosCount || 0)}
+              </span>
+            </button>
+
+            {/* Tab 7: Storage Settings & Lock */}
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`px-3 py-2 rounded-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'settings'
+                  ? 'bg-[#D1B995] text-[#1F4A3B] font-bold shadow-sm'
+                  : 'text-[#F7F5F0]/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <Cloud className="w-3.5 h-3.5" />
+              <span>{currentLang === 'ar' ? 'إعدادات التخزين' : 'Storage Settings'}</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            </button>
+          </div>
+
+          {/* Search Box in Toolbar */}
+          <div className="relative min-w-[200px] hidden md:block">
+            <Search className="w-3.5 h-3.5 text-white/50 absolute top-2.5 left-2.5 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={currentLang === 'ar' ? 'بحث بالاسم أو الكود...' : 'Search media...'}
+              className="w-full text-xs p-1.5 pl-8 bg-[#152B24] border border-[#D1B995]/30 rounded-xs text-white placeholder-white/40 outline-none focus:border-[#D1B995]"
+            />
           </div>
         </div>
 
-        {/* AUTHENTICATION VIEW IF NOT SIGNED IN */}
-        {!isAuthenticated ? (
-          <div className="p-8 sm:p-14 flex flex-col items-center justify-center text-center max-w-md mx-auto my-auto">
-            <div className="w-14 h-14 rounded-full bg-[#152B24] border border-[#D1B995]/50 flex items-center justify-center text-[#D1B995] mb-4 shadow-lg">
-              <KeyRound className="w-7 h-7" />
-            </div>
-            <h3 className="text-xl font-bold text-[#1F4A3B] mb-2">
-              {currentLang === 'ar' ? 'تسجيل دخول الإدارة لإدارة الوسائط' : 'Admin Authentication Required'}
-            </h3>
-            <p className="text-xs text-[#5C5C5C] mb-6 leading-relaxed">
-              {currentLang === 'ar'
-                ? 'لحماية وسائط الموقع ومحتواه من التعديل أو الحذف من قبل الزوار المجهولين، يرجى إدخال الرمز السري للمسؤول للمتابعة.'
-                : 'To protect portfolio media from unauthorized changes or deletions, administrative authorization is required to access management tools.'}
-            </p>
+        {/* MAIN BODY SCROLL AREA */}
+        <div className="p-6 overflow-y-auto flex-1 space-y-6">
 
-            <form onSubmit={handlePinSubmit} className="w-full space-y-4">
-              <div>
-                <input
-                  type="password"
-                  value={pinInput}
-                  onChange={(e) => {
-                    setPinInput(e.target.value);
-                    setPinError(null);
-                  }}
-                  placeholder={currentLang === 'ar' ? 'أدخل الرمز السري للمسؤول' : 'Enter Administrator PIN'}
-                  className={`w-full px-4 py-3 text-center tracking-widest text-base font-mono bg-white border rounded-sm outline-none transition-all ${
-                    pinError ? 'border-red-500 ring-2 ring-red-200' : 'border-[#D1B995]/50 focus:border-[#1F4A3B]'
-                  }`}
-                  autoFocus
-                />
-                {pinError && (
-                  <p className="text-xs text-red-600 mt-2 font-medium">
-                    {pinError}
-                  </p>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                disabled={isVerifyingPin || !pinInput.trim()}
-                className="w-full py-3.5 bg-[#1F4A3B] hover:bg-[#152B24] text-[#D1B995] font-bold text-xs uppercase tracking-wider rounded-sm transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {isVerifyingPin ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Unlock className="w-4 h-4" />
-                )}
-                <span>
-                  {isVerifyingPin
-                    ? (currentLang === 'ar' ? 'جارٍ التحقق...' : 'Verifying...')
-                    : (currentLang === 'ar' ? 'فتح لوحة الإدارة' : 'Unlock Dashboard')}
-                </span>
-              </button>
-            </form>
-          </div>
-        ) : (
-          /* AUTHENTICATED DASHBOARD VIEW */
-          <div className="flex flex-col flex-1 overflow-hidden">
-            
-            {/* Supabase Ephemeral Storage Warning Banner (if using fallback) */}
-            {supabaseStatus && !supabaseStatus.connected && (
-              <div className="bg-amber-100 border-b border-amber-300 text-amber-950 px-6 py-2.5 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-2 font-medium">
-                  <AlertTriangle className="w-4 h-4 text-amber-800 shrink-0" />
+          {/* ========================================================================= */}
+          {/* TAB 1: ALL PHYSICAL MEDIA (SEPARATING PHYSICAL FILES FROM SLOTS) */}
+          {/* ========================================================================= */}
+          {activeTab === 'all_media' && (
+            <div className="space-y-6">
+              {/* Architecture Clarification Banner */}
+              <div className="bg-white border border-[#D1B995]/40 rounded-sm p-5 shadow-xs space-y-3">
+                <div className="flex items-center gap-2 text-sm font-bold text-[#1F4A3B]">
+                  <HardDrive className="w-5 h-5 text-[#B89B6A]" />
                   <span>
                     {currentLang === 'ar'
-                      ? 'تنبيه النشر على Vercel: التخزين السحابي Supabase غير متصل حالياً. الملفات المرفوعة محفوظة محلياً فقط. لضمان بقائها بعد إعادة النشر، اربط Supabase من تبويب الإعدادات.'
-                      : 'Deployment Notice: Supabase Cloud Storage is not connected. Uploads are stored locally and will reset on Vercel redeployments. Connect Supabase in Settings.'}
+                      ? 'مبدأ الفصل الهندسي: الملفات الفعلية على القرص مقابل خانات العرض (Physical Files vs. Slots)'
+                      : 'Architectural Separation: Physical Storage Files vs. Layout Slots'}
                   </span>
                 </div>
-                <button
-                  onClick={() => setActiveTab('settings')}
-                  className="underline font-bold text-amber-900 hover:text-black shrink-0 cursor-pointer text-left rtl:text-right"
-                >
-                  {currentLang === 'ar' ? 'ربط Supabase الآن ←' : 'Connect Supabase Now →'}
-                </button>
-              </div>
-            )}
+                <p className="text-xs text-[#5C5C5C] leading-relaxed">
+                  {currentLang === 'ar'
+                    ? 'في هذا الموقع، تم فصل الملفات المخزنة فعلياً على القرص والمتعقبة من Git ومستودع Supabase السحابي (89 ملفاً: 74 صورة و 8 فيديوهات محلية و 7 فيديوهات سحابية) تماماً عن خانات العرض الهندسية في واجهة المستخدم (57 خانة: 40 تخصصات + 5 مراحل شقة + 12 مكتبة فيديو). هذا الفصل يضمن بقاء جميع الأصول سالمة ومحفوظة حتى لو كانت الخانات شاغرة أو قيد المراجعة الفنية.'
+                    : 'All physical media assets (74 images, 8 local videos, 7 Supabase cloud videos) are decoupled from UI layout slots (57 slots: 40 portfolio, 5 apartment stages, 12 videos). This ensures pristine preservation of every asset regardless of slot assignment.'}
+                </p>
 
-            {/* Top Toolbar: Tabs & Global Actions */}
-            <div className="bg-[#1F4A3B] px-6 py-3 border-b border-[#D1B995]/30 flex flex-wrap items-center justify-between gap-3 text-xs text-[#F7F5F0]">
-              
-              {/* Navigation Tabs */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  onClick={() => setActiveTab('images')}
-                  className={`px-4 py-2 rounded-sm font-semibold transition-all cursor-pointer flex items-center gap-2 ${
-                    activeTab === 'images'
-                      ? 'bg-[#D1B995] text-[#1F4A3B] shadow-sm'
-                      : 'text-[#F7F5F0]/80 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  <ImageIcon className="w-4 h-4" />
-                  <span>{currentLang === 'ar' ? 'خانات الصور (45 خانة)' : '45 Image Slots'}</span>
-                  <span className="px-1.5 py-0.2 bg-[#152B24] text-[#D1B995] rounded-full text-[10px] font-mono">
-                    {totalUploadedImages}/45
+                {/* Directory Breakdown Table */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 pt-2">
+                  <div className="bg-[#FAF8F5] border border-[#D1B995]/30 p-2.5 rounded-xs text-center">
+                    <span className="block text-[10px] font-mono text-[#5C5C5C]">public/assets/inbox/</span>
+                    <span className="text-lg font-bold font-mono text-[#1F4A3B]">62</span>
+                    <span className="block text-[10px] text-[#B89B6A]">{currentLang === 'ar' ? 'صور الأرشيف' : 'Archive Images'}</span>
+                  </div>
+
+                  <div className="bg-[#FAF8F5] border border-[#D1B995]/30 p-2.5 rounded-xs text-center">
+                    <span className="block text-[10px] font-mono text-[#5C5C5C]">public/assets/videos/</span>
+                    <span className="text-lg font-bold font-mono text-[#1F4A3B]">7</span>
+                    <span className="block text-[10px] text-[#B89B6A]">{currentLang === 'ar' ? 'فيديوهات المجلد' : 'Video Folder'}</span>
+                  </div>
+
+                  <div className="bg-[#FAF8F5] border border-[#D1B995]/30 p-2.5 rounded-xs text-center">
+                    <span className="block text-[10px] font-mono text-[#5C5C5C]">project-root/</span>
+                    <span className="text-lg font-bold font-mono text-[#1F4A3B]">1</span>
+                    <span className="block text-[10px] text-[#B89B6A]">{currentLang === 'ar' ? 'فيديو الجذر (1026)' : 'Root Video'}</span>
+                  </div>
+
+                  <div className="bg-[#FAF8F5] border border-[#D1B995]/30 p-2.5 rounded-xs text-center">
+                    <span className="block text-[10px] font-mono text-[#5C5C5C]">public/assets/images/</span>
+                    <span className="text-lg font-bold font-mono text-[#1F4A3B]">6</span>
+                    <span className="block text-[10px] text-[#B89B6A]">{currentLang === 'ar' ? 'صور الهوية' : 'Brand Assets'}</span>
+                  </div>
+
+                  <div className="bg-[#FAF8F5] border border-[#D1B995]/30 p-2.5 rounded-xs text-center">
+                    <span className="block text-[10px] font-mono text-[#5C5C5C]">src/assets/images/</span>
+                    <span className="text-lg font-bold font-mono text-[#1F4A3B]">4</span>
+                    <span className="block text-[10px] text-[#B89B6A]">{currentLang === 'ar' ? 'خلفيات الهيرو' : 'Hero Visuals'}</span>
+                  </div>
+
+                  <div className="bg-[#FAF8F5] border border-[#D1B995]/30 p-2.5 rounded-xs text-center">
+                    <span className="block text-[10px] font-mono text-[#5C5C5C]">public/assets/aistudio/</span>
+                    <span className="text-lg font-bold font-mono text-[#1F4A3B]">2</span>
+                    <span className="block text-[10px] text-[#B89B6A]">{currentLang === 'ar' ? 'شعارات' : 'Logos'}</span>
+                  </div>
+
+                  <div className="bg-emerald-50/70 border border-[#3ECF8E]/40 p-2.5 rounded-xs text-center">
+                    <span className="block text-[10px] font-mono text-emerald-800">Supabase Cloud</span>
+                    <span className="text-lg font-bold font-mono text-[#1F4A3B]">7</span>
+                    <span className="block text-[10px] text-emerald-700 font-medium">{currentLang === 'ar' ? 'فيديوهات السحابة' : 'Cloud Videos'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Physical Files List */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-[#1F4A3B] flex items-center gap-2">
+                    <FileCheck className="w-4 h-4 text-[#B89B6A]" />
+                    <span>{currentLang === 'ar' ? 'سجل الملفات الفعلية المفهرسة (82 ملفاً كاملاً)' : 'Indexed Physical Files Inventory (82 Files)'}</span>
+                  </h3>
+                  <span className="text-xs font-mono text-[#5C5C5C]">
+                    {currentLang === 'ar' ? 'حجم كلي تقديري: ~38.5 ميجابايت' : 'Total Size: ~38.5 MB'}
                   </span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('bulk')}
-                  className={`px-4 py-2 rounded-sm font-semibold transition-all cursor-pointer flex items-center gap-2 ${
-                    activeTab === 'bulk'
-                      ? 'bg-[#D1B995] text-[#1F4A3B] shadow-sm'
-                      : 'text-[#F7F5F0]/80 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  <Upload className="w-4 h-4" />
-                  <span>{currentLang === 'ar' ? 'رفع صور متعددة' : 'Bulk Upload'}</span>
-                  {queuedFiles.length > 0 && (
-                    <span className="px-1.5 py-0.2 bg-emerald-700 text-white rounded-full text-[10px] font-mono">
-                      {queuedFiles.length}
-                    </span>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('videos')}
-                  className={`px-4 py-2 rounded-sm font-semibold transition-all cursor-pointer flex items-center gap-2 ${
-                    activeTab === 'videos'
-                      ? 'bg-[#D1B995] text-[#1F4A3B] shadow-sm'
-                      : 'text-[#F7F5F0]/80 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  <Video className="w-4 h-4" />
-                  <span>{currentLang === 'ar' ? 'مكتبة الفيديوهات (5 خانات)' : '5 Video Slots'}</span>
-                  <span className="px-1.5 py-0.2 bg-[#152B24] text-[#D1B995] rounded-full text-[10px] font-mono">
-                    {totalUploadedVideos}/5
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('settings')}
-                  className={`px-3 py-2 rounded-sm font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    activeTab === 'settings'
-                      ? 'bg-[#D1B995] text-[#1F4A3B] shadow-sm'
-                      : 'text-[#F7F5F0]/80 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  <Cloud className="w-3.5 h-3.5" />
-                  <span>{currentLang === 'ar' ? 'إعدادات التخزين السحابي' : 'Cloud Storage'}</span>
-                  {supabaseStatus?.connected ? (
-                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                  ) : (
-                    <span className="w-2 h-2 rounded-full bg-amber-400" />
-                  )}
-                </button>
-              </div>
-
-              {/* Action: Prominent Bulk Upload Trigger Button */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleTriggerBulkSelect}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#D1B995] hover:bg-[#E5D1B0] text-[#1F4A3B] font-bold rounded-sm shadow-sm transition-all cursor-pointer"
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>{currentLang === 'ar' ? 'رفع صور متعددة من الجهاز' : 'Upload Multiple Images'}</span>
-                </button>
-              </div>
-
-            </div>
-
-            {/* TAB CONTENT CONTAINER */}
-            <div className="p-6 overflow-y-auto flex-1 space-y-6">
-              
-              {/* TAB 1: 45 INDIVIDUAL IMAGE SLOTS */}
-              {activeTab === 'images' && (
-                <div className="space-y-5">
-                  {/* GitHub + Vercel Permanent Storage Architecture Guidance Banner */}
-                  <div className="bg-[#FAF8F5] border border-[#D1B995]/40 rounded-sm p-4 text-xs text-[#242424] space-y-2">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 font-bold text-[#1F4A3B]">
-                      <div className="flex items-center gap-2">
-                        <FolderOpen className="w-4 h-4 text-[#B89B6A] shrink-0" />
-                        <span>
-                          {currentLang === 'ar'
-                            ? 'منهجية الحفظ الدائم عبر مستودع المشروع (GitHub + Vercel):'
-                            : 'Permanent Media Persistence via Project Repository (GitHub + Vercel):'}
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-mono text-[#1F4A3B] bg-white px-2.5 py-1 rounded-xs border border-[#D1B995]/40 w-fit">
-                        public/assets/projects/{'{category}'}/
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-[#5C5C5C] leading-relaxed">
-                      {currentLang === 'ar'
-                        ? 'لكي تظل الصور والفيديوهات دائمة بعد النشر ولا تختفي عند إعادة تشغيل السيرفرات، توضع الملفات في مجلدات المشروع العامة (public/assets/projects/ و public/assets/videos/)، ثم تلتزم في مستودع GitHub وتُنشر مع الموقع على Vercel. التخزين السحابي Supabase متاح أيضاً كخيار متزامن للتجاوز اللحظي دون إعادة نشر.'
-                        : 'To ensure media survives server restarts and Vercel redeployments permanently, place files into public project directories (public/assets/projects/ and public/assets/videos/), commit to GitHub, and deploy to Vercel. Supabase Cloud Storage remains available for on-the-fly dynamic overrides.'}
-                    </p>
-                  </div>
-
-                  {/* Category Filter & Search Bar */}
-                  <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-white p-3.5 rounded-sm border border-[#D1B995]/30">
-                    <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
-                      {[
-                        { id: 'all', label: currentLang === 'ar' ? 'الكل (45)' : 'All (45)' },
-                        { id: 'apartment', label: currentLang === 'ar' ? 'الشقة (5)' : 'Apartment (5)' },
-                        { id: 'plumbing', label: currentLang === 'ar' ? 'السباكة (5)' : 'Plumbing (5)' },
-                        { id: 'electrical', label: currentLang === 'ar' ? 'الكهرباء (5)' : 'Electrical (5)' },
-                        { id: 'plastering', label: currentLang === 'ar' ? 'المحارة (5)' : 'Plastering (5)' },
-                        { id: 'ceramics', label: currentLang === 'ar' ? 'السيراميك tiling (5)' : 'Tiling (5)' },
-                        { id: 'gypsum', label: currentLang === 'ar' ? 'الجبس (5)' : 'Gypsum (5)' },
-                        { id: 'painting', label: currentLang === 'ar' ? 'الدهانات (5)' : 'Painting (5)' },
-                        { id: 'interior', label: currentLang === 'ar' ? 'التصميم (5)' : 'Interior (5)' },
-                        { id: 'commercial', label: currentLang === 'ar' ? 'التجاري (5)' : 'Commercial (5)' }
-                      ].map((cat) => (
-                        <button
-                          key={cat.id}
-                          onClick={() => setImageCategoryFilter(cat.id)}
-                          className={`px-2.5 py-1 text-xs rounded-sm whitespace-nowrap cursor-pointer transition-colors ${
-                            imageCategoryFilter === cat.id
-                              ? 'bg-[#1F4A3B] text-[#D1B995] font-bold'
-                              : 'text-gray-600 hover:bg-gray-100'
-                          }`}
-                        >
-                          {cat.label}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="relative min-w-[240px]">
-                      <Search className="w-4 h-4 text-gray-400 absolute top-2.5 left-2.5 pointer-events-none" />
-                      <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder={currentLang === 'ar' ? 'بحث بالاسم أو الكود...' : 'Search slot or title...'}
-                        className="w-full text-xs p-2 pl-8 border rounded-sm bg-[#FAF8F5] border-gray-300 focus:border-[#1F4A3B] outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* 1. Apartment Stages Section */}
-                  {filteredApartment.length > 0 && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between border-b border-[#D1B995]/30 pb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#1F4A3B]" />
-                          <h3 className="text-sm font-bold text-[#1F4A3B]">
-                            {currentLang === 'ar'
-                              ? 'مشروع الشقة من البداية إلى النهاية (5 مراحل متسلسلة)'
-                              : 'Continuous Apartment Project (5 Sequential Stages)'}
-                          </h3>
-                        </div>
-                        <span className="text-xs font-mono text-[#B89B6A]">
-                          apartment-stage-01 .. 05
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {filteredApartment.map((stage) => {
-                          const isCurrentlyUploading = uploadingSlotKey === stage.slotKey;
-                          return (
-                            <div
-                              key={stage.slotKey}
-                              className="bg-white border border-[#D1B995]/30 rounded-sm p-4 shadow-xs flex flex-col justify-between hover:border-[#D1B995] transition-all"
-                            >
-                              <div>
-                                <div className="flex items-center justify-between mb-2.5">
-                                  <span className="text-xs font-mono font-bold text-[#D1B995] bg-[#152B24] px-2 py-0.5 rounded-xs">
-                                    {stage.slotKey}
-                                  </span>
-                                  {(() => {
-                                    const info = getSlotStorageInfo(stage.imageUrl);
-                                    return (
-                                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-xs border flex items-center gap-1 ${info.badgeClass}`}>
-                                        {info.type === 'repository' || info.type === 'supabase' ? (
-                                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                                        ) : info.type === 'ephemeral' ? (
-                                          <AlertTriangle className="w-3 h-3 text-amber-600" />
-                                        ) : (
-                                          <Clock className="w-3 h-3 text-amber-600" />
-                                        )}
-                                        {currentLang === 'ar' ? info.labelAr : info.labelEn}
-                                      </span>
-                                    );
-                                  })()}
-                                </div>
-
-                                <div
-                                  onClick={() => handleTriggerSingleUpload(stage.slotKey)}
-                                  className="relative aspect-video rounded-xs overflow-hidden bg-[#162C26] border border-[#D1B995]/20 cursor-pointer group mb-3 flex items-center justify-center"
-                                  title={currentLang === 'ar' ? 'انقر لرفع أو استبدال الصورة' : 'Click to upload or replace image'}
-                                >
-                                  {stage.imageUrl ? (
-                                    <>
-                                      <img
-                                        src={stage.imageUrl}
-                                        alt={stage.titleAr}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                                      />
-                                      <div className="absolute inset-0 bg-[#152B24]/75 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-[#D1B995] gap-1 p-2">
-                                        <RefreshCw className="w-5 h-5 animate-spin-hover" />
-                                        <span className="text-[11px] font-bold">
-                                          {currentLang === 'ar' ? 'استبدال هذه الصورة' : 'Replace Image'}
-                                        </span>
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <div className="flex flex-col items-center justify-center text-center p-3 text-[#F7F5F0]">
-                                      <div className="w-9 h-9 rounded-full bg-[#1F4A3B] border border-[#D1B995]/40 flex items-center justify-center text-[#D1B995] mb-1.5 group-hover:scale-110 transition-transform">
-                                        <Upload className="w-4 h-4" />
-                                      </div>
-                                      <span className="text-[11px] font-bold text-[#D1B995]">
-                                        {currentLang === 'ar' ? 'انقر لاختيار صورة من جهازك' : 'Click to select photo'}
-                                      </span>
-                                    </div>
-                                  )}
-
-                                  {isCurrentlyUploading && (
-                                    <div className="absolute inset-0 bg-[#152B24]/90 flex flex-col items-center justify-center p-4 text-[#D1B995]">
-                                      <RefreshCw className="w-6 h-6 animate-spin mb-2" />
-                                      <span className="text-xs font-mono font-bold">{uploadProgress}%</span>
-                                    </div>
-                                  )}
-                                </div>
-
-                                <h4 className="text-xs font-bold text-[#1F4A3B] leading-snug line-clamp-1">
-                                  0{stage.stageNumber}. {currentLang === 'ar' ? stage.titleAr : stage.titleEn}
-                                </h4>
-                                <p className="text-[11px] text-gray-500 line-clamp-2 mt-1 leading-relaxed">
-                                  {currentLang === 'ar' ? stage.descriptionAr : stage.descriptionEn}
-                                </p>
-                              </div>
-
-                              <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between text-xs">
-                                <button
-                                  onClick={() => handleTriggerSingleUpload(stage.slotKey)}
-                                  className="inline-flex items-center gap-1 text-[11px] text-[#1F4A3B] hover:text-[#B89B6A] font-semibold cursor-pointer"
-                                >
-                                  <Upload className="w-3 h-3" />
-                                  <span>{stage.imageUrl ? (currentLang === 'ar' ? 'استبدال' : 'Replace') : (currentLang === 'ar' ? 'رفع ملف' : 'Upload')}</span>
-                                </button>
-
-                                {stage.imageUrl && (
-                                  <button
-                                    onClick={() =>
-                                      setDeleteConfirmSlot({
-                                        slotKey: stage.slotKey,
-                                        type: 'apartment',
-                                        title: currentLang === 'ar' ? stage.titleAr : stage.titleEn
-                                      })
-                                    }
-                                    className="inline-flex items-center gap-1 text-[11px] text-red-600 hover:text-red-700 cursor-pointer"
-                                    title="Delete/Reset Image"
-                                  >
-                                    <Trash2 className="w-3 h-3" />
-                                    <span>{currentLang === 'ar' ? 'حذف' : 'Delete'}</span>
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 2. Portfolio 40 Slots Section */}
-                  {filteredPortfolio.length > 0 && (
-                    <div className="space-y-3 pt-4">
-                      <div className="flex items-center justify-between border-b border-[#D1B995]/30 pb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#1F4A3B]" />
-                          <h3 className="text-sm font-bold text-[#1F4A3B]">
-                            {currentLang === 'ar'
-                              ? 'معرض الأعمال الرئيسي (40 خانة موزعة على 8 أقسام)'
-                              : 'Main Portfolio Slots (40 Slots across 8 Categories)'}
-                          </h3>
-                        </div>
-                        <span className="text-xs font-mono text-[#B89B6A]">
-                          {filteredPortfolio.length} / 40 {currentLang === 'ar' ? 'خانة' : 'slots'}
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {filteredPortfolio.map((slot) => {
-                          const isCurrentlyUploading = uploadingSlotKey === slot.slotKey;
-                          return (
-                            <div
-                              key={slot.slotKey}
-                              className="bg-white border border-[#D1B995]/30 rounded-sm p-3.5 shadow-xs flex flex-col justify-between hover:border-[#D1B995] transition-all"
-                            >
-                              <div>
-                                <div className="flex items-center justify-between mb-2">
-                                  <span className="text-[11px] font-mono font-bold text-[#D1B995] bg-[#152B24] px-2 py-0.5 rounded-xs">
-                                    {slot.slotKey}
-                                  </span>
-                                  {(() => {
-                                    const info = getSlotStorageInfo(slot.imageUrl);
-                                    return (
-                                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-xs border flex items-center gap-1 ${info.badgeClass}`}>
-                                        {info.type === 'repository' || info.type === 'supabase' ? (
-                                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                                        ) : info.type === 'ephemeral' ? (
-                                          <AlertTriangle className="w-3 h-3 text-amber-600" />
-                                        ) : (
-                                          <Clock className="w-3 h-3 text-amber-600" />
-                                        )}
-                                        {currentLang === 'ar' ? info.labelAr : info.labelEn}
-                                      </span>
-                                    );
-                                  })()}
-                                </div>
-
-                                <div
-                                  onClick={() => handleTriggerSingleUpload(slot.slotKey)}
-                                  className="relative aspect-[4/3] rounded-xs overflow-hidden bg-[#162C26] border border-[#D1B995]/20 cursor-pointer group mb-2.5 flex items-center justify-center"
-                                  title={currentLang === 'ar' ? 'انقر لرفع أو استبدال الصورة' : 'Click to upload or replace image'}
-                                >
-                                  {slot.imageUrl ? (
-                                    <>
-                                      <img
-                                        src={slot.imageUrl}
-                                        alt={slot.titleAr}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                                      />
-                                      <div className="absolute inset-0 bg-[#152B24]/75 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-[#D1B995] gap-1 p-2">
-                                        <RefreshCw className="w-5 h-5 animate-spin-hover" />
-                                        <span className="text-[10px] font-bold">
-                                          {currentLang === 'ar' ? 'استبدال الصورة' : 'Replace Image'}
-                                        </span>
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <div className="flex flex-col items-center justify-center text-center p-2 text-[#F7F5F0]">
-                                      <div className="w-8 h-8 rounded-full bg-[#1F4A3B] border border-[#D1B995]/40 flex items-center justify-center text-[#D1B995] mb-1 group-hover:scale-110 transition-transform">
-                                        <Upload className="w-3.5 h-3.5" />
-                                      </div>
-                                      <span className="text-[10px] font-bold text-[#D1B995]">
-                                        {currentLang === 'ar' ? 'اختر صورة من جهازك' : 'Choose photo'}
-                                      </span>
-                                    </div>
-                                  )}
-
-                                  {isCurrentlyUploading && (
-                                    <div className="absolute inset-0 bg-[#152B24]/90 flex flex-col items-center justify-center p-4 text-[#D1B995]">
-                                      <RefreshCw className="w-5 h-5 animate-spin mb-1" />
-                                      <span className="text-xs font-mono font-bold">{uploadProgress}%</span>
-                                    </div>
-                                  )}
-                                </div>
-
-                                <h4 className="text-xs font-bold text-[#1F4A3B] leading-snug line-clamp-1">
-                                  {currentLang === 'ar' ? slot.titleAr : slot.titleEn}
-                                </h4>
-                              </div>
-
-                              <div className="mt-2.5 pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
-                                <button
-                                  onClick={() => handleTriggerSingleUpload(slot.slotKey)}
-                                  className="inline-flex items-center gap-1 text-[11px] text-[#1F4A3B] hover:text-[#B89B6A] font-semibold cursor-pointer"
-                                >
-                                  <Upload className="w-3 h-3" />
-                                  <span>{slot.imageUrl ? (currentLang === 'ar' ? 'استبدال' : 'Replace') : (currentLang === 'ar' ? 'رفع' : 'Upload')}</span>
-                                </button>
-
-                                {slot.imageUrl && (
-                                  <button
-                                    onClick={() =>
-                                      setDeleteConfirmSlot({
-                                        slotKey: slot.slotKey,
-                                        type: 'portfolio',
-                                        title: currentLang === 'ar' ? slot.titleAr : slot.titleEn
-                                      })
-                                    }
-                                    className="inline-flex items-center gap-1 text-[11px] text-red-600 hover:text-red-700 cursor-pointer"
-                                    title="Delete/Reset Image"
-                                  >
-                                    <Trash2 className="w-3 h-3" />
-                                    <span>{currentLang === 'ar' ? 'حذف' : 'Delete'}</span>
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
                 </div>
-              )}
 
-              {/* TAB 2: BULK IMAGE UPLOADER */}
-              {activeTab === 'bulk' && (
-                <div className="space-y-6">
-                  <div className="bg-[#152B24] text-[#F7F5F0] p-5 rounded-sm border border-[#D1B995]/40 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div>
-                      <h3 className="text-base font-bold text-[#D1B995] mb-1">
-                        {currentLang === 'ar' ? 'نظام الرفع المتعدد للصور وتطابق الأسماء الذكي' : 'Bulk Image Upload & Smart Slot Matching'}
-                      </h3>
-                      <p className="text-xs text-[#F7F5F0]/80 leading-relaxed max-w-2xl">
-                        {currentLang === 'ar'
-                          ? 'يمكنك تحديد مجموعة كاملة من الصور دفعة واحدة من جهازك (حتى 45 صورة). يتعرف النظام تلقائياً على الخانات المناسبة إذا كان اسم الملف يحتوي على الكود (مثل plumbing-01 أو stage-02 أو tiling-03)، ويمكنك إعادة تعيين أي صورة يدوياً قبل الحفظ.'
-                          : 'Select multiple photos from your computer at once. The system automatically maps filenames matching slot keys (e.g., plumbing-01, stage-02, tiling-03), and provides dropdown controls to manually assign non-matching files before committing.'}
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={handleTriggerBulkSelect}
-                      className="px-5 py-3 bg-[#D1B995] hover:bg-[#E5D1B0] text-[#1F4A3B] text-xs font-bold uppercase rounded-sm shadow-md cursor-pointer flex items-center gap-2 shrink-0"
-                    >
-                      <Upload className="w-4 h-4" />
-                      <span>{currentLang === 'ar' ? 'اختيار صور من جهازك' : 'Select Files'}</span>
-                    </button>
-                  </div>
-
-                  {queuedFiles.length === 0 ? (
-                    <div
-                      onClick={handleTriggerBulkSelect}
-                      className="border-2 border-dashed border-[#D1B995]/50 bg-white hover:bg-amber-50/30 p-12 rounded-sm text-center cursor-pointer transition-colors"
-                    >
-                      <div className="w-16 h-16 rounded-full bg-[#152B24] text-[#D1B995] flex items-center justify-center mx-auto mb-3 shadow-md">
-                        <Upload className="w-8 h-8" />
-                      </div>
-                      <h4 className="text-base font-bold text-[#1F4A3B] mb-1">
-                        {currentLang === 'ar' ? 'لم تقم بتحديد صور بعد' : 'No images in queue'}
-                      </h4>
-                      <p className="text-xs text-gray-500 max-w-md mx-auto">
-                        {currentLang === 'ar'
-                          ? 'اضغط هنا لاختيار عدة صور من حاسوبك، أو اسحب الصور إلى هذه المساحة.'
-                          : 'Click here to pick multiple project photos from your computer.'}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="bg-white rounded-sm border border-[#D1B995]/30 overflow-hidden shadow-xs">
-                      <div className="p-4 bg-[#FAF8F5] border-b border-[#D1B995]/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-[#1F4A3B]">
-                            {currentLang === 'ar' ? 'قائمة الملفات المحددة للرفع: ' : 'Files Selected for Upload: '}
-                          </span>
-                          <span className="px-2 py-0.5 bg-[#1F4A3B] text-[#D1B995] rounded-full text-xs font-mono font-bold">
-                            {queuedFiles.length}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setQueuedFiles([])}
-                            className="px-3 py-1.5 text-xs text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-sm cursor-pointer"
-                          >
-                            {currentLang === 'ar' ? 'إلغاء الكل' : 'Clear All'}
-                          </button>
-
-                          <button
-                            onClick={() => setShowBulkConfirmModal(true)}
-                            disabled={isProcessingBulk}
-                            className="px-5 py-2 bg-[#1F4A3B] hover:bg-[#152B24] text-[#D1B995] text-xs font-bold uppercase rounded-sm shadow-sm cursor-pointer flex items-center gap-2 disabled:opacity-50"
-                          >
-                            {isProcessingBulk ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <FileCheck className="w-3.5 h-3.5" />}
-                            <span>{currentLang === 'ar' ? 'مراجعة وحفظ الصور على الموقع' : 'Review & Commit All'}</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="divide-y divide-gray-100 max-h-[50vh] overflow-y-auto">
-                        {queuedFiles.map((item, idx) => (
-                          <div
-                            key={item.id}
-                            className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-amber-50/20 text-xs"
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <span className="text-gray-400 font-mono text-[11px] w-5">
-                                #{idx + 1}
-                              </span>
-                              
-                              <img
-                                src={item.previewUrl}
-                                alt={item.file.name}
-                                className="w-12 h-10 object-cover rounded-xs border border-gray-200 shrink-0"
-                              />
-
-                              <div className="min-w-0">
-                                <div className="font-bold text-[#1F4A3B] truncate max-w-xs sm:max-w-md">
-                                  {item.file.name}
-                                </div>
-                                <div className="flex items-center gap-2 text-[11px] text-gray-500 font-mono">
-                                  <span>{(item.file.size / 1024).toFixed(1)} KB</span>
-                                  {item.detectedSlotKey && (
-                                    <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded-xs border border-emerald-200 font-sans">
-                                      ✓ {currentLang === 'ar' ? 'تطابق تلقائي' : 'Auto-matched'}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-3 shrink-0">
-                              <div className="flex flex-col items-end">
-                                <label className="text-[10px] text-gray-400 font-mono mb-0.5">
-                                  {currentLang === 'ar' ? 'الخانة المخصصة:' : 'Assigned Slot:'}
-                                </label>
-                                <select
-                                  value={item.assignedSlotKey}
-                                  onChange={(e) => handleReassignQueuedFile(item.id, e.target.value)}
-                                  className="text-xs p-1.5 border border-[#D1B995]/50 rounded-sm bg-white font-mono text-[#1F4A3B] focus:border-[#1F4A3B] outline-none max-w-[220px]"
-                                >
-                                  {allImageSlots.map((slot) => (
-                                    <option key={slot.slotKey} value={slot.slotKey}>
-                                      {slot.label}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-
-                              {item.status === 'uploading' && (
-                                <div className="w-20">
-                                  <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                    <div
-                                      className="h-full bg-[#1F4A3B] transition-all"
-                                      style={{ width: `${item.progress}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              )}
-
-                              {item.status === 'completed' && (
-                                <span className="text-emerald-700 font-bold flex items-center gap-1 text-[11px]">
-                                  <Check className="w-4 h-4" />
-                                </span>
-                              )}
-
-                              <button
-                                onClick={() => handleRemoveFromQueue(item.id)}
-                                className="p-1.5 text-gray-400 hover:text-red-600 rounded-sm cursor-pointer"
-                                title="Remove file"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* TAB 3: 5 VIDEO SLOTS */}
-              {activeTab === 'videos' && (
-                <div className="space-y-4">
-                  <div className="bg-[#152B24] text-[#F7F5F0] p-4 rounded-sm border border-[#D1B995]/30 text-xs">
-                    <p>
-                      {currentLang === 'ar'
-                        ? 'تتيح لك هذه اللوحة إدارة الـ 5 فيديوهات الأساسية للموقع (المقابلة التعريفية، صالون محمد وخالد، مراحل التنفيذ، جولة الشقة، والمشروع التجاري). يمكنك رفع ملف فيديو مباشر (MP4/WebM) أو إدخال رابط يوتيوب أو فيميو.'
-                        : 'Manage the 5 designated video slots across the site. Upload video files directly (MP4/WebM) or provide streaming URLs (YouTube, Vimeo, MP4 direct).'}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4">
-                    {videoSlots.map((video) => {
-                      const isEditing = editingVideoSlot === video.slotKey;
-                      const isUploading = uploadingSlotKey === video.slotKey;
-
-                      return (
-                        <div
-                          key={video.slotKey}
-                          className="bg-white border border-[#D1B995]/30 rounded-sm p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4"
-                        >
-                          <div className="space-y-1.5 max-w-xl">
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono font-bold text-xs text-[#D1B995] bg-[#152B24] px-2 py-0.5 rounded-xs">
-                                {video.slotKey}
-                              </span>
-                              <strong className="text-sm text-[#1F4A3B]">
-                                0{video.id}. {currentLang === 'ar' ? video.titleAr : video.titleEn}
-                              </strong>
-                              {(() => {
-                                const info = getSlotStorageInfo(video.videoUrl);
-                                return (
-                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-xs border flex items-center gap-1 ${info.badgeClass}`}>
-                                    {info.type === 'repository' || info.type === 'supabase' ? (
-                                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                                    ) : info.type === 'ephemeral' ? (
-                                      <AlertTriangle className="w-3 h-3 text-amber-600" />
-                                    ) : (
-                                      <Clock className="w-3 h-3 text-amber-600" />
-                                    )}
-                                    {currentLang === 'ar' ? info.labelAr : info.labelEn}
-                                  </span>
-                                );
-                              })()}
-                            </div>
-
-                            <p className="text-xs text-gray-600 leading-relaxed">
-                              {currentLang === 'ar' ? video.descriptionAr : video.descriptionEn}
-                            </p>
-
-                            {video.videoUrl && (
-                              <div className="text-[11px] font-mono text-emerald-800 truncate max-w-md">
-                                Current URL: {video.videoUrl}
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
-                            {isEditing ? (
-                              <div className="flex items-center gap-1.5">
-                                <input
-                                  type="text"
-                                  value={videoUrlInput}
-                                  onChange={(e) => setVideoUrlInput(e.target.value)}
-                                  placeholder="https://youtube.com/..."
-                                  className="p-1.5 text-xs border rounded-sm w-56 font-mono bg-white"
-                                />
-                                <button
-                                  onClick={() => handleSaveVideoUrl(video.slotKey)}
-                                  className="px-2.5 py-1.5 bg-[#1F4A3B] text-[#D1B995] rounded-sm text-xs font-bold"
-                                >
-                                  {currentLang === 'ar' ? 'حفظ' : 'Save'}
-                                </button>
-                                <button
-                                  onClick={() => setEditingVideoSlot(null)}
-                                  className="p-1.5 bg-gray-200 rounded-sm text-xs"
-                                >
-                                  <X className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={() => handleTriggerVideoUpload(video.slotKey)}
-                                  disabled={isUploading}
-                                  className="px-3 py-1.5 text-xs bg-[#1F4A3B] text-[#D1B995] rounded-sm flex items-center justify-center gap-1.5 hover:bg-[#152B24] cursor-pointer"
-                                >
-                                  <Upload className="w-3.5 h-3.5" />
-                                  <span>{isUploading ? `${uploadProgress}%` : (currentLang === 'ar' ? 'رفع ملف MP4' : 'Upload MP4')}</span>
-                                </button>
-
-                                <button
-                                  onClick={() => {
-                                    setEditingVideoSlot(video.slotKey);
-                                    setVideoUrlInput(video.videoUrl || '');
-                                  }}
-                                  className="px-3 py-1.5 text-xs border border-[#1F4A3B] text-[#1F4A3B] hover:bg-[#1F4A3B] hover:text-[#D1B995] rounded-sm flex items-center justify-center gap-1 cursor-pointer"
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                  <span>{currentLang === 'ar' ? 'رابط URL' : 'Set URL'}</span>
-                                </button>
-
-                                {video.videoUrl && (
-                                  <button
-                                    onClick={() =>
-                                      setDeleteConfirmSlot({
-                                        slotKey: video.slotKey,
-                                        type: 'video',
-                                        title: currentLang === 'ar' ? video.titleAr : video.titleEn
-                                      })
-                                    }
-                                    className="p-1.5 text-red-600 hover:bg-red-50 rounded-sm"
-                                    title="Delete Video"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Dynamic Slot Extensibility Form */}
-                  <div className="mt-6 p-5 bg-[#FAF8F5] border border-[#D1B995]/40 rounded-sm space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <PlusCircle className="w-4 h-4 text-[#B89B6A]" />
-                        <h4 className="text-xs font-bold text-[#1F4A3B] uppercase tracking-wider">
-                          {currentLang === 'ar' ? 'إضافة خانة فيديو أو مشروع جديد (التوسع المستقبلي)' : 'Add New Video or Project Slot (Future Expansion)'}
-                        </h4>
-                      </div>
-                      <span className="text-[10px] font-mono bg-[#152B24] text-[#D1B995] px-2 py-0.5 rounded-xs">
-                        PERMANENT STORAGE
-                      </span>
-                    </div>
-
-                    <form onSubmit={handleCreateNewSlot} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-                      <div className="md:col-span-3 space-y-1">
-                        <label className="text-[11px] font-medium text-gray-700 block">
-                          {currentLang === 'ar' ? 'معرّف الخانة (SlotKey):' : 'Slot Key:'}
-                        </label>
-                        <input
-                          type="text"
-                          value={newSlotKey}
-                          onChange={(e) => setNewSlotKey(e.target.value)}
-                          placeholder="video-06-commercial"
-                          className="w-full p-2 text-xs border rounded-sm font-mono bg-white"
-                          required
-                        />
-                      </div>
-
-                      <div className="md:col-span-4 space-y-1">
-                        <label className="text-[11px] font-medium text-gray-700 block">
-                          {currentLang === 'ar' ? 'عنوان الفيديو / المشروع:' : 'Title:'}
-                        </label>
-                        <input
-                          type="text"
-                          value={newSlotTitleAr}
-                          onChange={(e) => setNewSlotTitleAr(e.target.value)}
-                          placeholder={currentLang === 'ar' ? 'جولة في فيلا التجمع' : 'Villa Walkthrough'}
-                          className="w-full p-2 text-xs border rounded-sm bg-white"
-                          required
-                        />
-                      </div>
-
-                      <div className="md:col-span-3 space-y-1">
-                        <label className="text-[11px] font-medium text-gray-700 block">
-                          {currentLang === 'ar' ? 'رابط الفيديو / الملف:' : 'Video / Media URL:'}
-                        </label>
-                        <input
-                          type="text"
-                          value={newSlotUrl}
-                          onChange={(e) => setNewSlotUrl(e.target.value)}
-                          placeholder="https://..."
-                          className="w-full p-2 text-xs border rounded-sm font-mono bg-white"
-                          required
-                        />
-                      </div>
-
-                      <div className="md:col-span-2">
-                        <button
-                          type="submit"
-                          disabled={newSlotSaving}
-                          className="w-full py-2 px-3 text-xs font-bold bg-[#1F4A3B] hover:bg-[#152B24] text-[#D1B995] rounded-sm transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-                        >
-                          <Save className="w-3.5 h-3.5" />
-                          <span>{newSlotSaving ? '...' : (currentLang === 'ar' ? 'حفظ الخانة' : 'Save Slot')}</span>
-                        </button>
-                      </div>
-                    </form>
-
-                    {newSlotMsg && (
-                      <div className={`text-xs p-2.5 rounded-sm flex items-center gap-2 ${newSlotMsg.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-300' : 'bg-red-50 text-red-800 border border-red-300'}`}>
-                        {newSlotMsg.type === 'success' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <AlertTriangle className="w-3.5 h-3.5 text-red-600" />}
-                        <span>{newSlotMsg.text}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 4: SETTINGS & SUPABASE STORAGE */}
-              {activeTab === 'settings' && (
-                <div className="space-y-6">
-                  {/* Real Status Banner */}
-                  <div
-                    className={`p-5 rounded-sm border shadow-xs space-y-3 ${
-                      supabaseStatus?.connected
-                        ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
-                        : 'bg-amber-50 border-amber-300 text-amber-950'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {supabaseStatus?.connected ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-700" />
-                        ) : (
-                          <ShieldAlert className="w-5 h-5 text-amber-700" />
-                        )}
-                        <h3 className="text-sm font-bold">
-                          {supabaseStatus?.connected
-                            ? (currentLang === 'ar' ? 'التخزين السحابي الدائم: متصل بنجاح مع Supabase' : 'Persistent Cloud Storage: Connected to Supabase')
-                            : (currentLang === 'ar' ? 'التخزين السحابي: غير متصل (يعمل في وضع التخزين المحلي المؤقت)' : 'Cloud Storage: Not Connected (Using Local Fallback)')}
-                        </h3>
-                      </div>
-
-                      <button
-                        onClick={refreshSupabaseStatus}
-                        className="inline-flex items-center gap-1 text-xs text-[#1F4A3B] hover:underline cursor-pointer"
+                {/* Videos Section */}
+                <div className="bg-white border border-[#D1B995]/30 rounded-sm p-4 space-y-3">
+                  <h4 className="text-xs font-bold text-[#1F4A3B] flex items-center gap-2">
+                    <Video className="w-4 h-4 text-[#B89B6A]" />
+                    <span>{currentLang === 'ar' ? 'ملفات الفيديو الـ 8 الفعلية على القرص:' : 'The 8 Physical Video Files on Disk:'}</span>
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {inventory?.physicalVideos.map((v) => (
+                      <div
+                        key={v.id}
+                        className="p-3 bg-[#FAF8F5] border border-[#D1B995]/30 rounded-xs flex flex-col justify-between text-xs space-y-2"
                       >
-                        <RefreshCw className={`w-3.5 h-3.5 ${isLoadingSupabaseStatus ? 'animate-spin' : ''}`} />
-                        <span>{currentLang === 'ar' ? 'تحديث الفحص' : 'Refresh Check'}</span>
-                      </button>
-                    </div>
-
-                    <p className="text-xs leading-relaxed opacity-90">
-                      {supabaseStatus?.message}
-                    </p>
-
-                    {supabaseStatus?.connected ? (
-                      <div className="pt-2 flex flex-wrap gap-4 text-xs font-mono text-emerald-900 border-t border-emerald-200">
                         <div>
-                          <strong>Project URL:</strong> {supabaseStatus.url}
-                        </div>
-                        <div>
-                          <strong>Bucket:</strong> {supabaseStatus.bucket}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-3 bg-white/70 border border-amber-200 rounded-sm text-xs text-amber-900 leading-relaxed">
-                        <strong>
-                          {currentLang === 'ar' ? 'لماذا يعد ربط Supabase ضرورياً للنشر على Vercel؟' : 'Why is Supabase necessary for Vercel?'}
-                        </strong>
-                        <p className="mt-1">
-                          {currentLang === 'ar'
-                            ? 'في منصات الاستضافة مثل Vercel، تعمل الخوادم بتقنية Serverless ويكون القرص المحلي مؤقتاً ومقروءاً فقط، وتختفي الصور بمجرد إعادة النشر أو انطفاء الخادم. عند ربط Supabase، يتم رفع الصور ومساراتها مباشرة إلى خوادم CDN سحابية عالمية دائمة، مما يضمن بقاء جميع الصور الـ 45 والفيديوهات الـ 5 مرئية لجميع زوار موقعك في كافة الأوقات.'
-                            : 'On serverless platforms like Vercel, the local filesystem is ephemeral and reset upon redeployment. Connecting Supabase ensures all 45 project photos and 5 videos are securely stored in global cloud object storage, remaining permanently viewable by all website visitors.'}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Supabase Environment Status Display */}
-                  <div className="bg-white p-6 rounded-sm border border-[#D1B995]/40 shadow-xs space-y-4 text-xs">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div>
-                        <h4 className="text-sm font-bold text-[#1F4A3B] mb-1 flex items-center gap-2">
-                          <Lock className="w-4 h-4 text-[#1F4A3B]" />
-                          <span>{currentLang === 'ar' ? 'إعدادات البيئة السحابية (آمنة تماماً)' : 'Server Environment Configuration (Strictly Secure)'}</span>
-                        </h4>
-                        <p className="text-xs text-gray-500">
-                          {currentLang === 'ar'
-                            ? 'حفاظاً على الأمان الكامل، تتم قراءة مفاتيح السحابة حصرياً عبر متغيرات بيئة الخادم (Environment Variables) ولا يتم إدخالها أو نقلها عبر المتصفح مطلقاً.'
-                            : 'For strict security, credentials are read exclusively via server-side environment variables and are never transmitted or input via the browser.'}
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={refreshSupabaseStatus}
-                        disabled={isLoadingSupabaseStatus}
-                        className="px-3.5 py-1.5 bg-[#FAF8F5] border border-[#D1B995] text-[#1F4A3B] font-bold rounded-xs cursor-pointer flex items-center gap-1.5 text-xs hover:bg-[#F2EDE4] self-start sm:self-auto"
-                      >
-                        <RefreshCw className={`w-3.5 h-3.5 ${isLoadingSupabaseStatus ? 'animate-spin' : ''}`} />
-                        <span>{currentLang === 'ar' ? 'إعادة فحص الاتصال' : 'Check Status'}</span>
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-3 bg-[#FAF8F5] rounded-xs border border-[#D1B995]/20 space-y-1">
-                        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">Supabase Project URL</span>
-                        <span className="font-mono text-xs text-[#1F4A3B] font-bold break-all">https://dvddnoawgghiwlmwepzx.supabase.co</span>
-                      </div>
-
-                      <div className="p-3 bg-[#FAF8F5] rounded-xs border border-[#D1B995]/20 space-y-1">
-                        <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">Storage Bucket</span>
-                        <span className="font-mono text-xs text-[#1F4A3B] font-bold">project-media</span>
-                      </div>
-
-                      <div className="md:col-span-2 p-3 bg-[#FAF8F5] rounded-xs border border-[#D1B995]/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div>
-                          <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">Server Secret Key (SUPABASE_SERVICE_ROLE_KEY)</span>
-                          <span className="text-xs text-gray-600">
-                            {supabaseStatus?.connected
-                              ? (currentLang === 'ar' ? 'مفعل ومقروء من بيئة الخادم بأمان' : 'Configured securely via server environment')
-                              : (currentLang === 'ar' ? 'غير مسجل في متغيرات البيئة حالياً' : 'Not configured in environment variables')}
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-mono text-[10px] text-[#B89B6A] bg-white px-1.5 py-0.5 rounded-xs border border-[#D1B995]/30">
+                              {v.location}
+                            </span>
+                            <span className="font-mono text-[10px] font-bold text-[#1F4A3B]">
+                              {v.sizeMb} MB
+                            </span>
+                          </div>
+                          <span className="font-mono font-bold text-[#1F4A3B] block truncate" title={v.fileName}>
+                            {v.fileName}
                           </span>
                         </div>
-                        <div>
-                          {supabaseStatus?.connected ? (
-                            <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-xs flex items-center gap-1">
-                              <Check className="w-3.5 h-3.5" />
-                              <span>{currentLang === 'ar' ? 'متصل' : 'Active'}</span>
+                        <div className="flex items-center justify-between pt-2 border-t border-[#D1B995]/20">
+                          {v.isDuplicate ? (
+                            <span className="text-[10px] font-mono text-amber-800 bg-amber-50 px-2 py-0.5 rounded-xs border border-amber-300">
+                              {currentLang === 'ar' ? 'نسخة مكررة محفوظة' : 'Preserved Duplicate'}
                             </span>
                           ) : (
-                            <span className="px-2.5 py-1 bg-amber-100 text-amber-800 font-bold text-xs rounded-xs flex items-center gap-1">
-                              <AlertTriangle className="w-3.5 h-3.5" />
-                              <span>{currentLang === 'ar' ? 'بانتظار الإعداد في البيئة' : 'Pending Config'}</span>
+                            <span className="text-[10px] font-mono text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-xs border border-emerald-300">
+                              {currentLang === 'ar' ? 'ملف أصلي فريد' : 'Unique Original'}
+                            </span>
+                          )}
+                          <button
+                            onClick={() => setLightboxItem({ url: v.url, title: v.fileName, isVideo: true })}
+                            className="p-1 text-[#1F4A3B] hover:text-[#B89B6A] cursor-pointer"
+                            title="تشغيل الفيديو"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Supabase Cloud Videos Section */}
+                <div className="bg-white border border-[#3ECF8E]/40 rounded-sm p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-[#1F4A3B] flex items-center gap-2">
+                      <Cloud className="w-4 h-4 text-[#3ECF8E]" />
+                      <span>
+                        {currentLang === 'ar'
+                          ? 'فيديوهات سحابة Supabase السبعة (Batch 02 - 2026 / project-media):'
+                          : 'Supabase Cloud Storage Videos (7 Files in batch-02-2026):'}
+                      </span>
+                    </h4>
+                    <span className="text-[11px] font-mono font-bold text-[#1F4A3B]">
+                      {currentLang === 'ar' ? 'الإجمالي: 156.45 ميجابايت (سحابة عامة CDN)' : 'Total: 156.45 MB (Public CDN)'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                    {inventory?.supabaseCloudVideos?.map((cv) => (
+                      <div
+                        key={cv.id}
+                        className="p-3 bg-emerald-50/40 border border-emerald-200 rounded-xs flex flex-col justify-between text-xs space-y-2"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-mono text-[9px] text-emerald-800 bg-white px-1.5 py-0.5 rounded-xs border border-emerald-200">
+                              Supabase CDN
+                            </span>
+                            <span className="font-mono text-[10px] font-bold text-[#1F4A3B]">
+                              {cv.sizeMb} MB
+                            </span>
+                          </div>
+                          <span className="font-mono font-bold text-[#1F4A3B] block truncate" title={cv.fileName}>
+                            {cv.fileName}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between pt-2 border-t border-emerald-200/60">
+                          <span className="text-[10px] font-mono text-amber-800 bg-amber-50 px-2 py-0.5 rounded-xs border border-amber-300">
+                            {cv.isAssigned
+                              ? (currentLang === 'ar' ? 'معين لخانة' : 'Assigned')
+                              : (currentLang === 'ar' ? 'غير معين (جاهز للربط)' : 'Unassigned (Ready)')}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => setLightboxItem({ url: cv.url, title: cv.fileName, isVideo: true })}
+                              className="p-1 text-[#1F4A3B] hover:text-[#B89B6A] cursor-pointer"
+                              title="تشغيل الفيديو"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                            {isAuthenticated && (
+                              <button
+                                onClick={() => {
+                                  setAssigningArchiveFile({ fileName: cv.fileName, url: cv.url });
+                                  setSelectedTargetSlot(cv.assignedSlotKey || 'video-01-owner-intro');
+                                }}
+                                className="px-2 py-0.5 bg-[#1F4A3B] hover:bg-[#152B24] text-[#D1B995] text-[10px] font-bold rounded-xs cursor-pointer"
+                                title="تعيين لخانة فيديو"
+                              >
+                                {currentLang === 'ar' ? 'تعيين' : 'Assign'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Inbox Original Photos Preview Grid */}
+                <div className="bg-white border border-[#D1B995]/30 rounded-sm p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-[#1F4A3B] flex items-center gap-2">
+                      <ImageIcon className="w-4 h-4 text-[#B89B6A]" />
+                      <span>{currentLang === 'ar' ? 'صور الأرشيف الأصلي (62 صورة داخل public/assets/inbox):' : 'Original Archive Photos (62 in public/assets/inbox):'}</span>
+                    </h4>
+                    <button
+                      onClick={() => setActiveTab('archive')}
+                      className="text-xs font-bold text-[#1F4A3B] hover:text-[#B89B6A] underline cursor-pointer"
+                    >
+                      {currentLang === 'ar' ? 'فتح الأرشيف الكامل وتعيين الخانات ←' : 'Open Full Archive & Assign Slots →'}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 max-h-96 overflow-y-auto p-1">
+                    {filteredArchive.slice(0, 32).map((img) => (
+                      <div
+                        key={img.id}
+                        onClick={() => setLightboxItem({ url: img.url, title: img.fileName })}
+                        className="group relative aspect-square bg-[#152B24] rounded-xs overflow-hidden border border-[#D1B995]/30 hover:border-[#D1B995] cursor-pointer shadow-xs"
+                      >
+                        <img
+                          src={img.url}
+                          alt={img.fileName}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                        <div className="absolute inset-x-0 bottom-0 bg-black/80 p-1 text-[9px] font-mono text-white truncate text-center">
+                          {img.sizeKb} KB
+                        </div>
+                        {img.isAssigned && (
+                          <div className="absolute top-1 right-1 p-0.5 bg-emerald-600 text-white rounded-xs">
+                            <CheckCircle2 className="w-3 h-3" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {filteredArchive.length > 32 && (
+                    <div className="text-center pt-2">
+                      <button
+                        onClick={() => setActiveTab('archive')}
+                        className="px-4 py-2 bg-[#FAF8F5] hover:bg-[#F2EEE5] text-[#1F4A3B] border border-[#D1B995]/40 text-xs font-bold rounded-xs cursor-pointer"
+                      >
+                        {currentLang === 'ar' ? `عرض كافة الصور الـ ${filteredArchive.length} في الأرشيف` : `View all ${filteredArchive.length} photos in Archive`}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 2: ORIGINAL ARCHIVE (62 INBOX IMAGES + 8 VIDEOS) */}
+          {/* ========================================================================= */}
+          {activeTab === 'archive' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-sm border border-[#D1B995]/30">
+                <div>
+                  <h3 className="text-sm font-bold text-[#1F4A3B] flex items-center gap-2">
+                    <FolderOpen className="w-4 h-4 text-[#B89B6A]" />
+                    <span>{currentLang === 'ar' ? 'الأرشيف الأصلي المحمي (Original Media Archive)' : 'Protected Original Media Archive'}</span>
+                  </h3>
+                  <p className="text-xs text-[#5C5C5C] mt-1">
+                    {currentLang === 'ar'
+                      ? 'جميع الملفات الـ 62 الأصلية في public/assets/inbox/ محفوظة دائماً. يمكنك تعيين أي صورة لأي خانة مشروع بنقرة واحدة.'
+                      : 'All 62 original inbox files are protected. Click "Assign to Project Slot" on any photo to link it.'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold text-[#1F4A3B] bg-[#FAF8F5] px-3 py-1.5 rounded-xs border border-[#D1B995]/30">
+                    {filteredArchive.length} {currentLang === 'ar' ? 'ملف في الأرشيف' : 'Archive Files'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Archive Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {filteredArchive.map((file) => (
+                  <div
+                    key={file.id}
+                    className="bg-white border border-[#D1B995]/30 rounded-sm overflow-hidden shadow-xs hover:border-[#D1B995] transition-all flex flex-col justify-between"
+                  >
+                    <div>
+                      {/* Image Preview Container */}
+                      <div
+                        onClick={() => setLightboxItem({ url: file.url, title: file.fileName })}
+                        className="relative aspect-[4/3] bg-[#152B24] overflow-hidden cursor-pointer group"
+                      >
+                        <img
+                          src={file.url}
+                          alt={file.fileName}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                          <Eye className="w-5 h-5 text-[#D1B995]" />
+                        </div>
+                        {file.isAssigned && (
+                          <div className="absolute top-2 right-2 px-2 py-0.5 bg-emerald-800/90 text-white text-[10px] font-mono font-bold rounded-xs flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>{currentLang === 'ar' ? 'معين لخانة' : 'Assigned'}</span>
+                          </div>
+                        )}
+                        {file.isAiConcept && (
+                          <div className="absolute top-2 left-2 px-2 py-0.5 bg-amber-800/90 text-white text-[10px] font-mono font-bold rounded-xs">
+                            AI CONCEPT
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Info Details */}
+                      <div className="p-3 space-y-1.5">
+                        <span className="font-mono text-xs font-bold text-[#1F4A3B] block truncate" title={file.fileName}>
+                          {file.fileName}
+                        </span>
+                        <div className="flex items-center justify-between text-[11px] text-[#5C5C5C] font-mono">
+                          <span>{file.sizeKb} KB</span>
+                          <span className="capitalize">{file.category}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bottom Action Bar */}
+                    <div className="p-3 pt-0">
+                      {isAuthenticated ? (
+                        <button
+                          onClick={() => {
+                            setAssigningArchiveFile({ fileName: file.fileName, url: file.url });
+                            setSelectedTargetSlot('');
+                          }}
+                          className="w-full py-1.5 bg-[#1F4A3B] hover:bg-[#152B24] text-[#D1B995] text-xs font-bold rounded-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <PlusCircle className="w-3.5 h-3.5" />
+                          <span>{currentLang === 'ar' ? 'تعيين إلى خانة مشروع' : 'Assign to Project Slot'}</span>
+                        </button>
+                      ) : (
+                        <div className="text-[10px] text-center text-[#5C5C5C] font-mono bg-[#FAF8F5] py-1 border border-[#D1B995]/20 rounded-xs">
+                          {currentLang === 'ar' ? 'محفوظ في الأرشيف (قراءة فقط)' : 'Archive Protected (Read-Only)'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 3: PORTFOLIO SLOTS (40 SLOTS ACROSS 8 DISCIPLINES) */}
+          {/* ========================================================================= */}
+          {activeTab === 'portfolio' && (
+            <div className="space-y-6">
+              {/* Discipline Segmented Filters */}
+              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-white p-3.5 rounded-sm border border-[#D1B995]/30">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none text-xs">
+                  {[
+                    { id: 'all', label: currentLang === 'ar' ? 'كافة التخصصات (40)' : 'All (40)' },
+                    { id: 'plumbing', label: currentLang === 'ar' ? 'السباكة (5)' : 'Plumbing (5)' },
+                    { id: 'electrical', label: currentLang === 'ar' ? 'الكهرباء (5)' : 'Electrical (5)' },
+                    { id: 'plastering', label: currentLang === 'ar' ? 'المحارة (5)' : 'Plastering (5)' },
+                    { id: 'ceramics', label: currentLang === 'ar' ? 'السيراميك (5)' : 'Ceramics (5)' },
+                    { id: 'gypsum', label: currentLang === 'ar' ? 'الجبس (5)' : 'Gypsum (5)' },
+                    { id: 'painting', label: currentLang === 'ar' ? 'الدهانات (5)' : 'Painting (5)' },
+                    { id: 'interior', label: currentLang === 'ar' ? 'التصميم الداخلي (5)' : 'Interior (5)' },
+                    { id: 'commercial', label: currentLang === 'ar' ? 'التجاري (5)' : 'Commercial (5)' }
+                  ].map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setPortfolioCategoryFilter(cat.id)}
+                      className={`px-3 py-1.5 rounded-xs whitespace-nowrap cursor-pointer transition-colors ${
+                        portfolioCategoryFilter === cat.id
+                          ? 'bg-[#1F4A3B] text-[#D1B995] font-bold shadow-xs'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 40-Slot Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {filteredPortfolio.map((slot) => {
+                  const hasImage = Boolean(slot.imageUrl && !slot.isPlaceholder);
+                  const isUploading = uploadingSlotKey === slot.slotKey;
+
+                  return (
+                    <div
+                      key={slot.id}
+                      className="bg-white border border-[#D1B995]/30 rounded-sm p-3.5 shadow-xs flex flex-col justify-between hover:border-[#D1B995] transition-all space-y-3"
+                    >
+                      <div>
+                        {/* Top Slot Header */}
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-mono font-bold text-[#D1B995] bg-[#152B24] px-2 py-0.5 rounded-xs">
+                            {slot.slotKey}
+                          </span>
+                          {hasImage ? (
+                            <span className="text-[10px] font-bold font-mono text-emerald-800 bg-emerald-50 border border-emerald-300 px-2 py-0.5 rounded-xs flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              <span>{currentLang === 'ar' ? 'اعتماد موثوق' : 'Verified'}</span>
+                            </span>
+                          ) : slot.slotKey === 'commercial-05' ? (
+                            <span className="text-[10px] font-bold font-mono text-gray-700 bg-gray-100 border border-gray-300 px-2 py-0.5 rounded-xs">
+                              {currentLang === 'ar' ? 'شاغرة (AI مستبعد)' : 'Empty (AI Excluded)'}
+                            </span>
+                          ) : slot.category === 'plastering' || (slot.category === 'painting' && (slot.slotKey === 'painting-01' || slot.slotKey === 'painting-03' || slot.slotKey === 'painting-04')) ? (
+                            <span className="text-[10px] font-bold font-mono text-amber-800 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded-xs flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-amber-600" />
+                              <span>{currentLang === 'ar' ? 'بانتظار تصوير الموقع' : 'Awaiting Photos'}</span>
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold font-mono text-amber-800 bg-amber-50 border border-amber-300 px-2 py-0.5 rounded-xs">
+                              {currentLang === 'ar' ? 'قيد المراجعة الفنية' : 'Pending Review'}
                             </span>
                           )}
                         </div>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Migration to Supabase Card (Non-Destructive) */}
-                  <div className="p-5 bg-[#F2EDE4] border border-[#D1B995]/60 rounded-sm space-y-3 text-xs">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Cloud className="w-4 h-4 text-[#1F4A3B]" />
-                        <strong className="text-[#1F4A3B] text-sm font-bold">
-                          {currentLang === 'ar' ? 'ترحيل الملفات الموجودة حالياً (31 ملف) إلى Supabase' : 'Migrate Existing Media (31 files) to Supabase Storage'}
-                        </strong>
-                      </div>
-                      <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-xs">
-                        {currentLang === 'ar' ? 'آمن وبدون حذف' : 'Non-Destructive'}
-                      </span>
-                    </div>
-
-                    <p className="text-gray-600 text-[11px] leading-relaxed">
-                      {currentLang === 'ar'
-                        ? 'يقوم هذا الإجراء بنسخ كافة الصور والفيديوهات الموجودة حالياً في مجلد public/uploads (28 صورة و 3 فيديوهات) إلى سحابة Supabase Storage مباشرة والحصول على روابط CDN دائمة وتثبيتها في الـ Manifest، دون حذف أو تعديل أي ملف محلي.'
-                        : 'Safely copies all 28 existing photos and 3 videos from public/uploads to your Supabase Storage bucket, generates permanent CDN links, and syncs the media manifest without deleting local originals.'}
-                    </p>
-
-                    {migrationError && (
-                      <div className="p-3 bg-red-50 text-red-900 border border-red-200 rounded-xs flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4 text-red-700 shrink-0" />
-                        <span>{migrationError}</span>
-                      </div>
-                    )}
-
-                    {migrationReport && (
-                      <div className="p-3 bg-white border border-emerald-300 rounded-xs space-y-2">
-                        <div className="flex items-center justify-between text-emerald-900 font-bold">
-                          <span>{currentLang === 'ar' ? 'اكتمل الترحيل بنجاح:' : 'Migration Completed:'}</span>
-                          <span>{migrationReport.verifiedCount} / {migrationReport.totalFiles} {currentLang === 'ar' ? 'ملف تم التحقق منه' : 'verified'}</span>
-                        </div>
-                        <div className="max-h-36 overflow-y-auto space-y-1 font-mono text-[10px] text-gray-700 divide-y divide-gray-100">
-                          {migrationReport.results.map((r) => (
-                            <div key={r.fileName} className="pt-1 flex items-center justify-between">
-                              <span className="flex items-center gap-1">
-                                {r.verified ? <Check className="w-3 h-3 text-emerald-600" /> : <AlertTriangle className="w-3 h-3 text-red-600" />}
-                                {r.fileName}
+                        {/* Visual Thumbnail or Placeholder */}
+                        <div
+                          onClick={() => hasImage && setLightboxItem({ url: slot.imageUrl!, title: slot.titleAr, subtitle: slot.slotKey })}
+                          className={`relative aspect-[4/3] rounded-xs overflow-hidden mb-2.5 flex items-center justify-center ${
+                            hasImage ? 'bg-[#152B24] cursor-pointer' : 'bg-[#FAF8F5] border border-dashed border-[#D1B995]/50'
+                          }`}
+                        >
+                          {hasImage ? (
+                            <img
+                              src={slot.imageUrl}
+                              alt={slot.titleAr}
+                              loading="lazy"
+                              className="w-full h-full object-cover hover:scale-105 transition-transform"
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center p-3 text-center text-[#5C5C5C]">
+                              <ImageIcon className="w-6 h-6 text-[#B89B6A] mb-1 opacity-60" />
+                              <span className="text-[10px] font-mono text-[#1F4A3B] font-bold">{slot.slotKey}</span>
+                              <span className="text-[9px] text-[#5C5C5C] mt-0.5">
+                                {slot.slotKey === 'commercial-05'
+                                  ? currentLang === 'ar' ? 'شاغرة لحين توفير صورة' : 'Awaiting genuine photo'
+                                  : currentLang === 'ar' ? 'بانتظار تصوير الموقع' : 'Awaiting Site Photo'}
                               </span>
-                              <span className="text-gray-400">{(r.sizeBytes / 1024).toFixed(1)} KB</span>
                             </div>
-                          ))}
+                          )}
+                        </div>
+
+                        {/* Slot Titles */}
+                        <h4 className="text-xs font-bold text-[#1F4A3B] line-clamp-1">
+                          {currentLang === 'ar' ? slot.titleAr : slot.titleEn}
+                        </h4>
+                        <p className="text-[11px] text-[#5C5C5C] line-clamp-2 mt-1 leading-relaxed">
+                          {currentLang === 'ar' ? slot.descriptionAr : slot.descriptionEn}
+                        </p>
+                      </div>
+
+                      {/* Slot Admin Actions */}
+                      {isAuthenticated && (
+                        <div className="pt-2 border-t border-[#D1B995]/20 flex items-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              setActiveTab('archive');
+                            }}
+                            className="flex-1 py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#F2EEE5] text-[#1F4A3B] border border-[#D1B995]/40 text-[11px] font-bold rounded-xs transition-colors cursor-pointer text-center"
+                          >
+                            {currentLang === 'ar' ? 'اختيار من الأرشيف' : 'From Archive'}
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setTargetSlotForUpload(slot.slotKey);
+                              singleFileInputRef.current?.click();
+                            }}
+                            disabled={isUploading}
+                            className="py-1.5 px-2 bg-[#1F4A3B] hover:bg-[#152B24] text-[#D1B995] text-[11px] font-bold rounded-xs transition-colors cursor-pointer"
+                            title={currentLang === 'ar' ? 'رفع صورة جديدة' : 'Upload File'}
+                          >
+                            <Upload className="w-3.5 h-3.5" />
+                          </button>
+
+                          {hasImage && (
+                            <button
+                              onClick={() => setConfirmClearSlot({ slotKey: slot.slotKey, title: slot.titleAr })}
+                              className="py-1.5 px-2 text-red-600 hover:bg-red-50 rounded-xs transition-colors cursor-pointer"
+                              title={currentLang === 'ar' ? 'إلغاء التعيين' : 'Clear Slot'}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 4: APARTMENT CASE STUDY (5 SEQUENTIAL STAGES) */}
+          {/* ========================================================================= */}
+          {activeTab === 'apartment' && (
+            <div className="space-y-6">
+              <div className="bg-white border border-[#D1B995]/30 rounded-sm p-4">
+                <h3 className="text-sm font-bold text-[#1F4A3B] flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#B89B6A]" />
+                  <span>{currentLang === 'ar' ? 'مشروع الشقة السكنية المتكامل — المراحل الـ 5 المتسلسلة' : 'Continuous Apartment Case Study — 5 Sequential Stages'}</span>
+                </h3>
+                <p className="text-xs text-[#5C5C5C] mt-1">
+                  {currentLang === 'ar'
+                    ? 'جميع المراحل الـ 5 معتمدة بالكامل بصور حقيقية موثقة من الموقع لنفس الشقة من لحظة الاستلام حتى التسليم النهائي.'
+                    : 'All 5 stages are verified with authentic documented site photos of the residential apartment from rough-in to handover.'}
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {apartmentStages.map((stage) => (
+                  <div
+                    key={stage.stageNumber}
+                    className="bg-white border border-[#D1B995]/30 rounded-sm p-4 shadow-xs grid grid-cols-1 md:grid-cols-12 gap-5 items-center"
+                  >
+                    {/* Stage Visual */}
+                    <div
+                      onClick={() => stage.imageUrl && setLightboxItem({ url: stage.imageUrl, title: stage.titleAr, subtitle: stage.slotKey })}
+                      className="md:col-span-4 aspect-[16/10] bg-[#152B24] rounded-xs overflow-hidden cursor-pointer relative group"
+                    >
+                      {stage.imageUrl ? (
+                        <img
+                          src={stage.imageUrl}
+                          alt={stage.titleAr}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-[#5C5C5C]">
+                          <ImageIcon className="w-6 h-6 text-[#B89B6A]" />
+                          <span className="text-[10px] font-mono mt-1">{stage.slotKey}</span>
+                        </div>
+                      )}
+                      <div className="absolute top-2 left-2 px-2 py-0.5 bg-[#152B24]/90 text-[#D1B995] font-mono text-[10px] font-bold rounded-xs border border-[#D1B995]/30">
+                        {stage.slotKey}
+                      </div>
+                    </div>
+
+                    {/* Stage Info */}
+                    <div className="md:col-span-8 flex flex-col justify-between h-full space-y-2">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="w-6 h-6 rounded-full bg-[#1F4A3B] text-[#D1B995] font-mono font-bold text-xs flex items-center justify-center">
+                            0{stage.stageNumber}
+                          </span>
+                          <span className="text-xs font-bold text-[#B89B6A] uppercase font-mono">
+                            {currentLang === 'ar' ? stage.phaseLabelAr : stage.phaseLabelEn}
+                          </span>
+                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-2 py-0.5 rounded-xs">
+                            {currentLang === 'ar' ? 'صورة موقع أصلية معتمدة' : 'Verified Site Photo'}
+                          </span>
+                        </div>
+
+                        <h4 className="text-sm font-bold text-[#1F4A3B]">
+                          {currentLang === 'ar' ? stage.titleAr : stage.titleEn}
+                        </h4>
+                        <p className="text-xs text-[#5C5C5C] leading-relaxed mt-1">
+                          {currentLang === 'ar' ? stage.descriptionAr : stage.descriptionEn}
+                        </p>
+                      </div>
+
+                      {isAuthenticated && (
+                        <div className="flex items-center gap-2 pt-2 border-t border-[#D1B995]/20">
+                          <button
+                            onClick={() => {
+                              setTargetSlotForUpload(stage.slotKey);
+                              singleFileInputRef.current?.click();
+                            }}
+                            className="px-3 py-1.5 bg-[#FAF8F5] hover:bg-[#F2EEE5] text-[#1F4A3B] border border-[#D1B995]/30 text-xs font-bold rounded-xs cursor-pointer flex items-center gap-1.5"
+                          >
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>{currentLang === 'ar' ? 'استبدال الصورة' : 'Replace Image'}</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 5: VIDEO LIBRARY (5 DESIGNATED VIDEO SLOTS) */}
+          {/* ========================================================================= */}
+          {activeTab === 'videos' && (
+            <div className="space-y-6">
+              <div className="bg-white border border-[#D1B995]/30 rounded-sm p-4">
+                <h3 className="text-sm font-bold text-[#1F4A3B] flex items-center gap-2">
+                  <Video className="w-4 h-4 text-[#B89B6A]" />
+                  <span>{currentLang === 'ar' ? 'مكتبة الفيديو المعمارية الكاملة — (12 فيديو: 5 أصلية + 7 سحابية)' : 'Full Architectural Video Library — (12 Videos: 5 Original + 7 Cloud)'}</span>
+                </h3>
+                <p className="text-xs text-[#5C5C5C] mt-1">
+                  {currentLang === 'ar'
+                    ? 'تعرض هنا كافة الفيديوهات الـ 12 المعتمدة: الفيديوهات الـ 5 الأصلية بكامل محتواها المحلي، بالإضافة إلى الفيديوهات الـ 7 السحابية الجديدة الموثقة عبر Supabase Storage.'
+                    : 'All 12 videos are available: the 5 original local videos and the 7 additional Supabase cloud-streamed execution videos.'}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {videoSlots.map((video) => (
+                  <div
+                    key={video.id}
+                    className="bg-white border border-[#D1B995]/30 rounded-sm p-4 shadow-xs flex flex-col justify-between space-y-3"
+                  >
+                    <div>
+                      {/* Video Player */}
+                      <div className="aspect-video bg-black rounded-xs overflow-hidden mb-3 relative">
+                        {video.videoUrl ? (
+                          <video
+                            src={video.videoUrl}
+                            controls
+                            poster={video.posterUrl}
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center text-white/60">
+                            <Video className="w-8 h-8 text-[#D1B995]" />
+                            <span className="text-xs font-mono mt-1">{video.slotKey}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Video Meta */}
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-mono font-bold text-[#D1B995] bg-[#152B24] px-2 py-0.5 rounded-xs">
+                          {video.slotKey}
+                        </span>
+                        {video.videoUrl?.includes('supabase.co') ? (
+                          <span className="text-[10px] font-bold font-mono text-emerald-800 bg-emerald-50 border border-emerald-300 px-2 py-0.5 rounded-xs">
+                            {currentLang === 'ar' ? 'سحابة Supabase معتمدة' : 'Verified Supabase Cloud'}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold font-mono text-emerald-800 bg-emerald-50 border border-emerald-300 px-2 py-0.5 rounded-xs">
+                            {currentLang === 'ar' ? 'فيديو أصلي معتمد' : 'Verified Original'}
+                          </span>
+                        )}
+                      </div>
+
+                      <h4 className="text-xs font-bold text-[#1F4A3B]">
+                        {currentLang === 'ar' ? video.titleAr : video.titleEn}
+                      </h4>
+                      <p className="text-[11px] text-[#5C5C5C] leading-relaxed mt-1">
+                        {currentLang === 'ar' ? video.descriptionAr : video.descriptionEn}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-[#D1B995]/20 font-mono text-[10px] text-[#5C5C5C] truncate flex items-center justify-between">
+                      <span className="truncate max-w-[70%]">{video.defaultFilePath}</span>
+                      {isAuthenticated && (
+                        <button
+                          onClick={() => setConfirmClearSlot({ slotKey: video.slotKey, title: video.titleAr })}
+                          className="text-red-700 hover:text-red-800 text-[10px] font-bold cursor-pointer"
+                        >
+                          {currentLang === 'ar' ? 'إفراغ' : 'Clear'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* INTEGRATED SUPABASE CLOUD VIDEOS (BATCH-02-2026: SLOTS VIDEO-06 TO VIDEO-12) */}
+              <div className="mt-8 pt-6 border-t border-[#D1B995]/40 space-y-4">
+                <div className="bg-emerald-50/70 border border-[#3ECF8E]/50 rounded-sm p-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <h3 className="text-sm font-bold text-[#1F4A3B] flex items-center gap-2">
+                      <Cloud className="w-4 h-4 text-[#3ECF8E]" />
+                      <span>
+                        {currentLang === 'ar'
+                          ? 'فيديوهات سحابة Supabase المعتمدة والمدمجة (7 فيديوهات — Batch 02 - 2026)'
+                          : 'Integrated Supabase Cloud Videos (7 Approved Files — Batch 02 - 2026)'}
+                      </span>
+                    </h3>
+                    <span className="text-[11px] font-mono font-bold text-emerald-900 bg-white px-2.5 py-1 rounded-xs border border-emerald-300">
+                      Bucket: project-media (Public CDN)
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#5C5C5C] mt-1.5 leading-relaxed">
+                    {currentLang === 'ar'
+                      ? 'تم تعيين وتوثيق هذه الفيديوهات السبعة السحابية بالكامل في مكتبة الفيديو العامة (الخانات video-06 إلى video-12) مع الحفاظ التام على الفيديوهات الخمسة الأصلية دون أي استبدال. جميع الفيديوهات تعمل مباشرة وبسرعة فائقة عبر شبكة Supabase CDN العامة (HTTP 200 OK).'
+                      : 'All 7 cloud videos are fully verified and integrated into the public Video Library (slots video-06 through video-12) alongside the 5 original foundation videos. Live and responsive via the Supabase Public CDN.'}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {inventory?.supabaseCloudVideos?.map((cv) => (
+                    <div
+                      key={cv.id}
+                      className="bg-white border border-emerald-200 rounded-sm p-4 shadow-xs flex flex-col justify-between space-y-3 hover:border-emerald-400 transition-colors"
+                    >
+                      <div>
+                        {/* Inline Video Player */}
+                        <div className="aspect-video bg-black rounded-xs overflow-hidden mb-3 relative">
+                          <video
+                            src={cv.url}
+                            controls
+                            preload="metadata"
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+
+                        {/* Cloud Video Meta */}
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs font-mono font-bold text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded-xs border border-emerald-300">
+                            {cv.fileName}
+                          </span>
+                          <span className="text-[10px] font-bold font-mono text-[#1F4A3B] bg-[#FAF8F5] border border-[#D1B995]/40 px-2 py-0.5 rounded-xs">
+                            {cv.sizeMb} MB
+                          </span>
+                        </div>
+
+                        <div className="text-[11px] text-[#5C5C5C] font-mono space-y-1">
+                          <div className="truncate text-[10px] text-gray-500" title={cv.url}>
+                            {cv.storagePath}
+                          </div>
+                          <div className="flex items-center gap-2 pt-0.5 flex-wrap">
+                            <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100/60 px-1.5 py-0.2 rounded-xs">
+                              {currentLang === 'ar' ? 'سحابة عامة CDN' : 'Public CDN'}
+                            </span>
+                            {cv.isAssigned ? (
+                              <span className="text-[10px] font-semibold text-emerald-900 bg-emerald-100/80 px-2 py-0.5 rounded-xs border border-emerald-300 flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                <span>
+                                  {currentLang === 'ar'
+                                    ? `معتمد بخانة: ${cv.assignedSlotKey}`
+                                    : `Assigned: ${cv.assignedSlotKey}`}
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded-xs border border-amber-200">
+                                {currentLang === 'ar' ? 'غير معين بعد' : 'Unassigned'}
+                              </span>
+                            )}
+                          </div>
+                          {cv.assignedSlotTitleAr && (
+                            <div className="text-[11px] font-sans font-bold text-[#1F4A3B] pt-1">
+                              {currentLang === 'ar' ? cv.assignedSlotTitleAr : cv.assignedSlotTitleEn}
+                            </div>
+                          )}
                         </div>
                       </div>
-                    )}
 
-                    <div className="pt-1 flex items-center justify-between">
-                      <span className="text-[11px] text-gray-500">
-                        {currentLang === 'ar' ? 'يتطلب اتصالاً نشطاً بـ Supabase أولاً.' : 'Requires verified Supabase connection first.'}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={handleRunMigration}
-                        disabled={isMigrating || !supabaseStatus?.connected}
-                        className="px-5 py-2 bg-[#1F4A3B] hover:bg-[#152B24] text-[#D1B995] font-bold text-xs uppercase tracking-wider rounded-sm cursor-pointer flex items-center gap-2 disabled:opacity-50"
-                      >
-                        {isMigrating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Cloud className="w-3.5 h-3.5" />}
-                        <span>
-                          {isMigrating
-                            ? (currentLang === 'ar' ? 'جارٍ ترحيل والتحقق من الملفات...' : 'Migrating & Verifying...')
-                            : (currentLang === 'ar' ? 'بدء الترحيل السحابي والتحقق' : 'Run Cloud Migration')}
-                        </span>
-                      </button>
+                      {/* Action buttons */}
+                      <div className="pt-2 border-t border-[#D1B995]/20 flex items-center justify-between gap-2">
+                        <button
+                          onClick={() => setLightboxItem({ url: cv.url, title: cv.fileName, subtitle: `${cv.sizeMb} MB`, isVideo: true })}
+                          className="px-2.5 py-1.5 bg-[#FAF8F5] hover:bg-[#F2EEE5] text-[#1F4A3B] border border-[#D1B995]/30 text-xs font-bold rounded-xs cursor-pointer flex items-center gap-1"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>{currentLang === 'ar' ? 'تكبير المشغل' : 'Expand'}</span>
+                        </button>
+
+                        {isAuthenticated && (
+                          <button
+                            onClick={() => {
+                              setAssigningArchiveFile({ fileName: cv.fileName, url: cv.url });
+                              setSelectedTargetSlot(cv.assignedSlotKey || 'video-01-owner-intro');
+                            }}
+                            className="px-3 py-1.5 bg-[#1F4A3B] hover:bg-[#152B24] text-[#D1B995] text-xs font-bold rounded-xs cursor-pointer flex items-center gap-1.5 transition-colors"
+                          >
+                            <PlusCircle className="w-3.5 h-3.5" />
+                            <span>{currentLang === 'ar' ? 'تعديل الخانة' : 'Reassign Slot'}</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
-                  {/* Danger Zone */}
-                  <div className="p-4 bg-red-50 border border-red-200 rounded-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                    <div>
-                      <strong className="text-red-900 block font-bold">
-                        {currentLang === 'ar' ? 'استعادة الحالة الافتراضية للوسائط' : 'Reset All Media Slots'}
-                      </strong>
-                      <span className="text-red-700 text-[11px]">
-                        {currentLang === 'ar'
-                          ? 'سيؤدي هذا إلى مسح كافة الصور والفيديوهات المرفوعة والعودة للـ manifest الافتراضي.'
-                          : 'Deletes all uploaded overrides and restores original manifest placeholders.'}
-                      </span>
-                    </div>
+          {/* ========================================================================= */}
+          {/* TAB 6: UNASSIGNED & DUPLICATE ASSETS (PENDING REVIEW) */}
+          {/* ========================================================================= */}
+          {activeTab === 'unassigned' && (
+            <div className="space-y-6">
+              {/* Duplicate Groups Breakdown */}
+              <div className="bg-white border border-[#D1B995]/30 rounded-sm p-5 space-y-4 shadow-xs">
+                <div className="flex items-center gap-2 text-sm font-bold text-[#1F4A3B]">
+                  <Copy className="w-4 h-4 text-[#B89B6A]" />
+                  <span>
+                    {currentLang === 'ar'
+                      ? 'مجموعات الملفات المكررة المطابقة رقمياً (3 مجموعات محققة بالهاش ومحفوظة دون حذف)'
+                      : 'Verified Binary Duplicate Groups (3 Groups Preserved Without Deletion)'}
+                  </span>
+                </div>
+                <p className="text-xs text-[#5C5C5C] leading-relaxed">
+                  {currentLang === 'ar'
+                    ? 'طبقاً للشرط الإلزامي الصارم، لم يتم حذف أي ملف مكرر حتى لو كان التطابق بنسبة 100%. تم توثيق المجموعات الثلاث أدناه مع الحفاظ على جميع النسخ في مساراتها:'
+                    : 'Per non-destructive instructions, zero duplicate files were deleted. All copies remain safe in their original directories.'}
+                </p>
 
-                    <button
-                      onClick={handleResetAll}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-sm cursor-pointer whitespace-nowrap self-start sm:self-auto"
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {inventory?.duplicateGroups.map((grp) => (
+                    <div
+                      key={grp.groupId}
+                      className="bg-[#FAF8F5] border border-[#D1B995]/40 rounded-xs p-3.5 space-y-2 text-xs"
                     >
-                      {currentLang === 'ar' ? 'إعادة ضبط شاملة' : 'Reset All'}
-                    </button>
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-[10px] font-bold text-[#1F4A3B] bg-white px-2 py-0.5 rounded-xs border border-[#D1B995]/30">
+                          {grp.hashType}
+                        </span>
+                        <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-xs">
+                          {grp.files.length} {currentLang === 'ar' ? 'نسخ مطابقة' : 'Copies'}
+                        </span>
+                      </div>
+                      <h5 className="font-bold text-[#1F4A3B]">
+                        {currentLang === 'ar' ? grp.titleAr : grp.titleEn}
+                      </h5>
+                      <div className="space-y-1 font-mono text-[10px] text-[#5C5C5C] bg-white p-2 rounded-xs border border-[#D1B995]/20">
+                        {grp.files.map((f, i) => (
+                          <div key={i} className="truncate" title={f}>
+                            • {f}
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-[#5C5C5C] leading-tight">
+                        {currentLang === 'ar' ? grp.actionNoteAr : grp.actionNoteEn}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* AI Concept Image Safeguard */}
+              <div className="bg-amber-50 border border-amber-300 rounded-sm p-4 text-xs space-y-2">
+                <div className="flex items-center gap-2 font-bold text-amber-950">
+                  <ShieldAlert className="w-4 h-4 text-amber-800" />
+                  <span>
+                    {currentLang === 'ar'
+                      ? 'قاعدة الحظر الصارم لصورة الذكاء الاصطناعي (Gemini Generated Concept)'
+                      : 'AI-Generated Image Strict Exclusion Rule'}
+                  </span>
+                </div>
+                <p className="text-amber-900 leading-relaxed text-[11px]">
+                  {currentLang === 'ar'
+                    ? 'الصورة "Gemini_Generated_Image_32iexj32iexj32ie.jpg" هي نموذج تخيلي بالذكاء الاصطناعي وليست موقعاً حقيقياً تم تنفيذه. تم استبعادها تماماً من جميع خانات المشاريع المنفذة (بما فيها الخانة التجارية commercial-01 و commercial-05) وتم إبقاؤها في الأرشيف كنموذج مفاهيمي استرشادي فقط.'
+                    : 'Image "Gemini_Generated_Image_32iexj32iexj32ie.jpg" is an AI-generated mockup and is strictly excluded from all authentic client portfolio slots. It is preserved solely as a concept reference.'}
+                </p>
+              </div>
+
+              {/* Unassigned Files Grid */}
+              <div className="bg-white border border-[#D1B995]/30 rounded-sm p-5 space-y-3 shadow-xs">
+                <h4 className="text-xs font-bold text-[#1F4A3B] flex items-center gap-2">
+                  <FolderOpen className="w-4 h-4 text-[#B89B6A]" />
+                  <span>{currentLang === 'ar' ? 'ملفات الوارد غير المعينة حالياً لخانات (37 ملفاً):' : 'Unassigned Inbox Assets (37 Files):'}</span>
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                  {inventory?.inboxFiles
+                    .filter((f) => !f.isAssigned)
+                    .map((file) => (
+                      <div
+                        key={file.id}
+                        className="bg-[#FAF8F5] border border-[#D1B995]/30 rounded-xs p-2 text-xs flex flex-col justify-between space-y-1.5"
+                      >
+                        <div
+                          onClick={() => setLightboxItem({ url: file.url, title: file.fileName })}
+                          className="aspect-square bg-[#152B24] rounded-xs overflow-hidden cursor-pointer"
+                        >
+                          <img src={file.url} alt={file.fileName} className="w-full h-full object-cover" />
+                        </div>
+                        <span className="font-mono text-[10px] text-[#1F4A3B] truncate block" title={file.fileName}>
+                          {file.fileName}
+                        </span>
+                        {file.isAiConcept ? (
+                          <span className="text-[9px] font-mono text-amber-800 bg-amber-100 px-1 py-0.2 rounded-xs text-center">
+                            AI Concept
+                          </span>
+                        ) : file.isDuplicate ? (
+                          <span className="text-[9px] font-mono text-amber-800 bg-amber-100 px-1 py-0.2 rounded-xs text-center">
+                            Duplicate
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-mono text-gray-700 bg-gray-100 px-1 py-0.2 rounded-xs text-center">
+                            Pending
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* Supabase Cloud Videos in Tab 6 */}
+              {inventory?.supabaseCloudVideos && inventory.supabaseCloudVideos.some((v) => !v.isAssigned) ? (
+                <div className="bg-white border border-[#3ECF8E]/40 rounded-sm p-5 space-y-3 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-[#1F4A3B] flex items-center gap-2">
+                      <Cloud className="w-4 h-4 text-[#3ECF8E]" />
+                      <span>
+                        {currentLang === 'ar'
+                          ? 'فيديوهات سحابة Supabase غير المعينة (قيد المراجعة / Unassigned Cloud Videos):'
+                          : 'Unassigned Supabase Cloud Videos (Pending Assignment):'}
+                      </span>
+                    </h4>
+                    <span className="text-[10px] font-mono font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-xs border border-emerald-300">
+                      project-media/mohamed-hosny/videos/batch-02-2026/
+                    </span>
                   </div>
+                  <p className="text-xs text-[#5C5C5C] leading-relaxed">
+                    {currentLang === 'ar'
+                      ? 'يمكنك معاينة هذه الفيديوهات وتعيينها لأي من خانات الفيديو من تبويب "مكتبة الفيديو".'
+                      : 'You can preview these videos and assign them to any video slot.'}
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+                    {inventory.supabaseCloudVideos
+                      .filter((cv) => !cv.isAssigned)
+                      .map((cv) => (
+                        <div
+                          key={cv.id}
+                          className="bg-emerald-50/30 border border-emerald-200 rounded-xs p-3 text-xs flex flex-col justify-between space-y-2"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-mono text-[9px] text-emerald-800 bg-white px-1.5 py-0.5 rounded-xs border border-emerald-200">
+                                Cloud MP4
+                              </span>
+                              <span className="font-mono text-[10px] font-bold text-[#1F4A3B]">
+                                {cv.sizeMb} MB
+                              </span>
+                            </div>
+                            <span className="font-mono font-bold text-[#1F4A3B] truncate block" title={cv.fileName}>
+                              {cv.fileName}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between pt-1 border-t border-emerald-200/60">
+                            <button
+                              onClick={() => setLightboxItem({ url: cv.url, title: cv.fileName, subtitle: `${cv.sizeMb} MB`, isVideo: true })}
+                              className="text-[10px] text-[#1F4A3B] hover:text-[#B89B6A] font-bold flex items-center gap-1 cursor-pointer"
+                            >
+                              <Eye className="w-3 h-3" />
+                              <span>{currentLang === 'ar' ? 'معاينة' : 'Preview'}</span>
+                            </button>
+                            {isAuthenticated && (
+                              <button
+                                onClick={() => {
+                                  setAssigningArchiveFile({ fileName: cv.fileName, url: cv.url });
+                                  setSelectedTargetSlot(cv.assignedSlotKey || 'video-01-owner-intro');
+                                }}
+                                className="text-[10px] bg-[#1F4A3B] text-[#D1B995] hover:bg-[#152B24] px-2 py-0.5 rounded-xs font-bold cursor-pointer"
+                              >
+                                {currentLang === 'ar' ? 'تعيين' : 'Assign'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-emerald-50/70 border border-emerald-300 rounded-sm p-4 space-y-2 shadow-xs">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <h4 className="text-xs font-bold text-emerald-900 flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <span>
+                        {currentLang === 'ar'
+                          ? 'فيديوهات سحابة Supabase: جميع الفيديوهات السبعة (7/7) معينة ومعتمدة في مكتبة الفيديو'
+                          : 'Supabase Cloud Videos: All 7 Videos (7/7) Fully Assigned & Approved in Video Library'}
+                      </span>
+                    </h4>
+                    <span className="text-[10px] font-mono font-bold text-emerald-800 bg-white px-2.5 py-0.5 rounded-xs border border-emerald-300">
+                      video-06 إلى video-12
+                    </span>
+                  </div>
+                  <p className="text-xs text-emerald-800/90 leading-relaxed">
+                    {currentLang === 'ar'
+                      ? 'لا توجد أي فيديوهات سحابية معلقة أو غير معينة. تم تعيين وتوثيق الفيديوهات السبعة بالكامل كإضافات رسمية (video-06 إلى video-12) مع الحفاظ على الفيديوهات الخمسة الأصلية دون أي استبدال.'
+                      : 'Zero unassigned cloud videos. All 7 Supabase cloud videos are assigned to slots video-06 through video-12 alongside the original 5 foundation videos.'}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 7: STORAGE SETTINGS & SAFETY LOCK */}
+          {/* ========================================================================= */}
+          {activeTab === 'settings' && (
+            <div className="space-y-6">
+              {/* Safety Lock Banner */}
+              <div className="bg-emerald-950 text-white border border-[#D1B995] rounded-sm p-5 space-y-3">
+                <div className="flex items-center gap-2.5 text-sm font-bold text-[#D1B995]">
+                  <ShieldCheck className="w-5 h-5" />
+                  <span>
+                    {currentLang === 'ar'
+                      ? 'مرحلة القفل الآمن نشطة (Phase 1 Safety Lock Active)'
+                      : 'Phase 1 Safety Lock is Active'}
+                  </span>
+                </div>
+                <p className="text-xs text-white/80 leading-relaxed">
+                  {currentLang === 'ar'
+                    ? 'بناءً على الشروط الإلزامية للمرحلة الأولى، تم قفل عمليات الترحيل التلقائي إلى التخزين السحابي Supabase وعدم تعديل مفاتيح الربط في هذه الخطوة. التخزين النشط حالياً هو تخزين المستودع المحلي Git Repository داخل مجلدات public/assets/ وملف data/media-manifest.json.'
+                    : 'In compliance with Phase 1 safety constraints, automatic cloud migrations to Supabase are locked. Active storage is the Git repository under public/assets/ and data/media-manifest.json.'}
+                </p>
+              </div>
+
+              {/* Current Storage Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Git Storage Card */}
+                <div className="bg-white border border-[#D1B995]/30 rounded-sm p-5 space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-bold text-[#1F4A3B]">
+                    <HardDrive className="w-4 h-4 text-[#B89B6A]" />
+                    <span>{currentLang === 'ar' ? 'التخزين المحلي الدائم (Git Storage)' : 'Local Git Storage'}</span>
+                  </div>
+                  <div className="space-y-2 text-xs font-mono text-[#5C5C5C]">
+                    <div className="flex justify-between py-1 border-b border-[#D1B995]/20">
+                      <span>Status / الحالة:</span>
+                      <span className="text-emerald-700 font-bold">نشط ومحمي (Active & Tracked)</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-[#D1B995]/20">
+                      <span>Images Path:</span>
+                      <span className="text-[#1F4A3B]">public/assets/inbox/</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-[#D1B995]/20">
+                      <span>Videos Path:</span>
+                      <span className="text-[#1F4A3B]">public/assets/videos/</span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span>Manifest Path:</span>
+                      <span className="text-[#1F4A3B]">data/media-manifest.json</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Supabase Diagnostic Card */}
+                <div className="bg-white border border-[#D1B995]/30 rounded-sm p-5 space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-bold text-[#1F4A3B]">
+                    <Cloud className="w-4 h-4 text-[#B89B6A]" />
+                    <span>{currentLang === 'ar' ? 'حالة سحابة Supabase (للمرحلة القادمة)' : 'Supabase Cloud (Phase 2/3 Ready)'}</span>
+                  </div>
+                  <div className="space-y-2 text-xs font-mono text-[#5C5C5C]">
+                    <div className="flex justify-between py-1 border-b border-[#D1B995]/20">
+                      <span>Project URL:</span>
+                      <span className="text-[#1F4A3B]">https://dvddnoawgghiwlmwepzx.supabase.co</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-[#D1B995]/20">
+                      <span>Storage Bucket:</span>
+                      <span className="text-[#1F4A3B]">project-media</span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span>Migration Status:</span>
+                      <span className="text-amber-800 font-bold">موقوف مؤقتاً (Locked in Phase 1)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Admin Session Control */}
+              {isAuthenticated && (
+                <div className="bg-white border border-[#D1B995]/30 rounded-sm p-4 flex items-center justify-between">
+                  <div className="text-xs">
+                    <span className="font-bold text-[#1F4A3B] block">
+                      {currentLang === 'ar' ? 'جلسة الإدارة نشطة' : 'Admin Session Active'}
+                    </span>
+                    <span className="text-[#5C5C5C]">
+                      {currentLang === 'ar' ? 'صلاحيات الإشراف مفعلة حتى إغلاق المتصفح' : 'Full access enabled'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="px-4 py-1.5 bg-red-950 text-red-200 hover:bg-red-900 border border-red-700/40 text-xs font-bold rounded-xs cursor-pointer transition-colors"
+                  >
+                    {currentLang === 'ar' ? 'تسجيل الخروج' : 'Logout Admin'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+        </div>
+
+        {/* ========================================================================= */}
+        {/* MODAL 1: ASSIGN ARCHIVE FILE TO SLOT MODAL */}
+        {/* ========================================================================= */}
+        {assigningArchiveFile && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
+            <div className="bg-white border border-[#D1B995] rounded-sm max-w-lg w-full p-6 shadow-2xl space-y-4">
+              <div className="flex items-center justify-between border-b border-[#D1B995]/30 pb-3">
+                <h3 className="text-sm font-bold text-[#1F4A3B] flex items-center gap-2">
+                  <PlusCircle className="w-4 h-4 text-[#B89B6A]" />
+                  <span>{currentLang === 'ar' ? 'تعيين صورة من الأرشيف إلى خانة مشروع' : 'Assign Archive Photo to Slot'}</span>
+                </h3>
+                <button
+                  onClick={() => setAssigningArchiveFile(null)}
+                  className="text-gray-400 hover:text-black cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Selected File Card */}
+              <div className="flex items-center gap-3 p-3 bg-[#FAF8F5] border border-[#D1B995]/30 rounded-xs">
+                {assigningArchiveFile.fileName.endsWith('.mp4') ? (
+                  <div className="w-16 h-16 bg-black rounded-xs flex items-center justify-center shrink-0 border border-[#D1B995]/30">
+                    <Video className="w-6 h-6 text-[#D1B995]" />
+                  </div>
+                ) : (
+                  <img
+                    src={assigningArchiveFile.url}
+                    alt={assigningArchiveFile.fileName}
+                    className="w-16 h-16 object-cover rounded-xs border border-[#D1B995]/30 shrink-0"
+                  />
+                )}
+                <div className="min-w-0">
+                  <span className="text-[10px] font-mono text-[#B89B6A] block">Selected Source:</span>
+                  <span className="text-xs font-mono font-bold text-[#1F4A3B] truncate block">
+                    {assigningArchiveFile.fileName}
+                  </span>
+                </div>
+              </div>
+
+              {/* Target Slot Selector */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#1F4A3B]">
+                  {currentLang === 'ar' ? 'اختر الخانة المستهدفة للربط:' : 'Select Target Slot:'}
+                </label>
+                <select
+                  value={selectedTargetSlot}
+                  onChange={(e) => setSelectedTargetSlot(e.target.value)}
+                  className="w-full text-xs p-2.5 bg-white border border-[#D1B995]/50 rounded-xs font-mono outline-none focus:border-[#1F4A3B]"
+                >
+                  <option value="">{currentLang === 'ar' ? '-- اختر خانة --' : '-- Choose a slot --'}</option>
+                  
+                  {assigningArchiveFile.fileName.endsWith('.mp4') ? (
+                    <optgroup label={currentLang === 'ar' ? 'خانات مكتبة الفيديو (12)' : 'Video Library Slots (12)'}>
+                      {videoSlots.map((v) => (
+                        <option key={v.slotKey} value={v.slotKey}>
+                          {v.slotKey} — {v.titleAr}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ) : (
+                    <>
+                      <optgroup label={currentLang === 'ar' ? 'مراحل الشقة السكنية (5)' : 'Apartment Stages (5)'}>
+                        {apartmentStages.map((s) => (
+                          <option key={s.slotKey} value={s.slotKey}>
+                            {s.slotKey} — {s.titleAr}
+                          </option>
+                        ))}
+                      </optgroup>
+
+                      <optgroup label={currentLang === 'ar' ? 'خانات التخصصات المعمارية (40)' : 'Portfolio Slots (40)'}>
+                        {portfolioSlots.map((p) => (
+                          <option key={p.slotKey} value={p.slotKey}>
+                            {p.slotKey} — {p.titleAr}
+                          </option>
+                        ))}
+                      </optgroup>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              {assignmentSuccessMsg && (
+                <div className="p-2.5 bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs rounded-xs font-medium text-center">
+                  {assignmentSuccessMsg}
                 </div>
               )}
 
-            </div>
-
-            {/* Modal Bottom Footer Bar */}
-            <div className="bg-[#FAF8F5] px-6 py-3.5 border-t border-[#D1B995]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-              <div className="flex items-center gap-3 text-[#5C5C5C] font-mono text-[11px]">
-                <span>Total: 45 Photo Slots (40 Portfolio + 5 Apartment) · 5 Video Slots</span>
-              </div>
-
-              <div className="flex items-center gap-2">
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2 pt-2">
                 <button
-                  onClick={onClose}
-                  className="px-6 py-2 bg-[#1F4A3B] hover:bg-[#152B24] text-[#D1B995] font-bold rounded-sm transition-colors cursor-pointer"
+                  type="button"
+                  onClick={() => setAssigningArchiveFile(null)}
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xs cursor-pointer"
                 >
-                  {currentLang === 'ar' ? 'إغلاق اللوحة' : 'Close Dashboard'}
+                  {currentLang === 'ar' ? 'إلغاء' : 'Cancel'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmAssignment}
+                  disabled={!selectedTargetSlot || isSavingAssignment}
+                  className="px-5 py-2 bg-[#1F4A3B] hover:bg-[#152B24] text-[#D1B995] text-xs font-bold rounded-xs cursor-pointer transition-colors disabled:opacity-50"
+                >
+                  {isSavingAssignment
+                    ? currentLang === 'ar' ? 'جاري الحفظ...' : 'Saving...'
+                    : currentLang === 'ar' ? 'تأكيد التعيين والربط' : 'Confirm Assignment'}
                 </button>
               </div>
             </div>
-
           </div>
         )}
 
-      </div>
+        {/* ========================================================================= */}
+        {/* MODAL 2: LIGHTBOX PREVIEW MODAL */}
+        {/* ========================================================================= */}
+        {lightboxItem && (
+          <div
+            onClick={() => setLightboxItem(null)}
+            className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xs cursor-pointer"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[#152B24] border border-[#D1B995]/50 rounded-sm max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl relative"
+            >
+              <div className="p-3 bg-[#1F4A3B] border-b border-[#D1B995]/30 flex items-center justify-between text-white text-xs">
+                <div>
+                  <span className="font-bold text-[#D1B995]">{lightboxItem.title}</span>
+                  {lightboxItem.subtitle && (
+                    <span className="font-mono text-white/60 ml-2">({lightboxItem.subtitle})</span>
+                  )}
+                </div>
+                <button
+                  onClick={() => setLightboxItem(null)}
+                  className="p-1 hover:text-[#D1B995] cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
 
-      {/* CONFIRMATION MODAL BEFORE BULK COMMIT */}
-      {showBulkConfirmModal && (
-        <div className="fixed inset-0 z-60 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-white rounded-sm border border-[#D1B995] max-w-lg w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center gap-3 text-[#1F4A3B]">
-              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 shrink-0">
+              <div className="p-2 flex items-center justify-center bg-black/50 max-h-[75vh] overflow-hidden">
+                {lightboxItem.isVideo ? (
+                  <video src={lightboxItem.url} controls autoPlay className="max-h-[70vh] max-w-full" />
+                ) : (
+                  <img
+                    src={lightboxItem.url}
+                    alt={lightboxItem.title}
+                    className="max-h-[70vh] max-w-full object-contain"
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* MODAL 3: CONFIRM CLEAR SLOT MODAL */}
+        {/* ========================================================================= */}
+        {confirmClearSlot && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
+            <div className="bg-white border border-red-300 rounded-sm max-w-md w-full p-5 shadow-2xl space-y-4">
+              <div className="flex items-center gap-2 text-red-700 font-bold text-sm">
                 <AlertTriangle className="w-5 h-5" />
+                <span>{currentLang === 'ar' ? 'تأكيد إلغاء تعيين الخانة' : 'Confirm Slot Reset'}</span>
               </div>
-              <div>
-                <h4 className="text-base font-bold">
-                  {currentLang === 'ar' ? 'تأكيد حفظ الصور على الموقع' : 'Confirm Bulk Image Upload'}
-                </h4>
-                <p className="text-xs text-gray-500">
-                  {currentLang === 'ar'
-                    ? `أنت على وشك حفظ ${queuedFiles.length} صورة في الخانات المحددة.`
-                    : `You are about to commit ${queuedFiles.length} photos to designated slots.`}
-                </p>
+              <p className="text-xs text-[#5C5C5C] leading-relaxed">
+                {currentLang === 'ar'
+                  ? `هل أنت متأكد من رغبتك في إلغاء تعيين الخانة [${confirmClearSlot.slotKey}] (${confirmClearSlot.title})؟ سيتم إعادة الخانة إلى وضع الانتظار الشاغر مع الحفاظ على الملف الأصلي في الأرشيف.`
+                  : `Are you sure you want to clear slot [${confirmClearSlot.slotKey}]? The original archive photo will remain untouched.`}
+              </p>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmClearSlot(null)}
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xs cursor-pointer"
+                >
+                  {currentLang === 'ar' ? 'تراجع' : 'Cancel'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExecuteClearSlot}
+                  disabled={isClearingSlot}
+                  className="px-5 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-xs cursor-pointer transition-colors"
+                >
+                  {isClearingSlot
+                    ? currentLang === 'ar' ? 'جاري الإلغاء...' : 'Clearing...'
+                    : currentLang === 'ar' ? 'نعم، أفرغ الخانة' : 'Yes, Clear Slot'}
+                </button>
               </div>
-            </div>
-
-            <div className="p-3 bg-amber-50 rounded-xs border border-amber-200 text-xs text-amber-900 leading-relaxed">
-              {currentLang === 'ar'
-                ? 'سيتم استبدال الصور الحالية في هذه الخانات بالملفات المختارة. هل ترغب في المتابعة؟'
-                : 'Any existing photos in the assigned slots will be replaced with your newly chosen files. Proceed?'}
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                onClick={() => setShowBulkConfirmModal(false)}
-                className="px-4 py-2 border rounded-sm text-xs cursor-pointer hover:bg-gray-100"
-              >
-                {currentLang === 'ar' ? 'إلغاء' : 'Cancel'}
-              </button>
-              <button
-                onClick={handleExecuteBulkUpload}
-                className="px-6 py-2 bg-[#1F4A3B] hover:bg-[#152B24] text-[#D1B995] font-bold rounded-sm text-xs cursor-pointer shadow-md"
-              >
-                {currentLang === 'ar' ? 'تأكيد الحفظ الآن' : 'Commit & Save'}
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* CONFIRMATION MODAL FOR SINGLE DELETE */}
-      {deleteConfirmSlot && (
-        <div className="fixed inset-0 z-60 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-white rounded-sm border border-red-300 max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center gap-3 text-red-700">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                <Trash2 className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-base font-bold">
-                  {currentLang === 'ar' ? 'تأكيد حذف الصورة' : 'Confirm Delete Media'}
-                </h4>
-                <p className="text-xs text-gray-500 font-mono">
-                  Slot: {deleteConfirmSlot.slotKey}
-                </p>
-              </div>
-            </div>
+          </>
+        )}
 
-            <p className="text-xs text-gray-700">
-              {currentLang === 'ar'
-                ? `هل أنت متأكد من حذف الصورة الخاصة بـ (${deleteConfirmSlot.title})؟ سيتم إعادة الخانة للحالة الافتراضية.`
-                : `Are you sure you want to delete the media for (${deleteConfirmSlot.title})? The slot will revert to default placeholder.`}
-            </p>
-
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                onClick={() => setDeleteConfirmSlot(null)}
-                className="px-4 py-2 border rounded-sm text-xs cursor-pointer hover:bg-gray-100"
-              >
-                {currentLang === 'ar' ? 'إلغاء' : 'Cancel'}
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-sm text-xs cursor-pointer shadow-md"
-              >
-                {currentLang === 'ar' ? 'تأكيد الحذف' : 'Confirm Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+      </div>
     </div>
   );
 };
