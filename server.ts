@@ -222,11 +222,31 @@ function recordLoginAttempt(ip: string, success: boolean) {
 }
 
 // Timing-safe PIN verification against server-side secret
-function verifyAdminPin(inputPin: string): boolean {
-  if (!inputPin || typeof inputPin !== 'string') return false;
+function verifyAdminPin(inputPin: string): { valid: boolean; reason?: string } {
+  if (!inputPin || typeof inputPin !== 'string') return { valid: false, reason: 'PIN is required' };
+
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+  const configuredPin = process.env.ADMIN_PIN;
+
+  // In production, reject login if ADMIN_PIN is missing, empty, or set to the default placeholder
+  if (isProduction) {
+    if (!configuredPin || configuredPin.trim() === '' || configuredPin.trim() === 'hosny2026') {
+      console.warn('[Security] Admin login rejected in production: ADMIN_PIN environment variable must be set to a secure custom value.');
+      return {
+        valid: false,
+        reason: 'Administrative access disabled: ADMIN_PIN environment variable is not configured with a secure custom PIN in production.'
+      };
+    }
+  }
+
+  const effectivePin = configuredPin?.trim() || 'hosny2026';
   const hashInput = crypto.createHash('sha256').update(inputPin.trim()).digest();
-  const hashTarget = crypto.createHash('sha256').update(ADMIN_PIN.trim()).digest();
-  return crypto.timingSafeEqual(hashInput, hashTarget);
+  const hashTarget = crypto.createHash('sha256').update(effectivePin).digest();
+
+  if (crypto.timingSafeEqual(hashInput, hashTarget)) {
+    return { valid: true };
+  }
+  return { valid: false, reason: 'Invalid administrative PIN' };
 }
 
 // Security Middleware: Strictly requires a valid active administrative session token
@@ -272,7 +292,8 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(400).json({ success: false, message: 'PIN is required' });
   }
 
-  if (verifyAdminPin(pin)) {
+  const verification = verifyAdminPin(pin);
+  if (verification.valid) {
     recordLoginAttempt(ip, true);
 
     // Generate cryptographically secure random session token (256-bit entropy)
@@ -292,7 +313,7 @@ app.post('/api/auth/login', (req, res) => {
   recordLoginAttempt(ip, false);
   return res.status(401).json({
     success: false,
-    message: 'Invalid administrative PIN'
+    message: verification.reason || 'Invalid administrative PIN'
   });
 });
 
