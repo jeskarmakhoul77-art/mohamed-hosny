@@ -188,7 +188,7 @@ export const translations = {
     bookViaWhatsApp: 'Book Site Visit via WhatsApp',
 
     // Hero Section
-    heroTagline: 'From Vision to Reality.',
+    heroTagline: 'From Concept to Completion',
     heroHeadline: 'Premium Architectural Finishing & Complete Space Fit-Out',
     heroSubheadline: 'Transforming residential and commercial spaces into refined architectural reality. Rigorous engineering oversight, strict adherence to timelines and specifications, and reliable craftsmanship in Cairo and Egypt.',
     heroPrimaryCta: 'Book Site Visit via WhatsApp',

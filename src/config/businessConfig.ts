@@ -39,9 +39,9 @@ export const BUSINESS_CONFIG: BusinessConfig = {
   brandName: 'MOHAMED HOSNY',
   descriptorEn: 'CONSTRUCTION & INTERIOR DESIGN',
   descriptorAr: 'للتشطيبات المعمارية والتصميم الداخلي',
-  brandLineEn: 'From Vision to Reality.',
+  brandLineEn: 'From Concept to Completion.',
   brandLineAr: 'من الفكرة إلى التنفيذ.',
-  siteVisitFeeEgp: 0,
+  siteVisitFeeEgp: 600,
   // Central WhatsApp number configuration:
   whatsappNumber: OFFICIAL_WHATSAPP_NUMBER,
   instapayAddress: '',
@@ -55,23 +55,27 @@ export const BUSINESS_CONFIG: BusinessConfig = {
 };
 
 export const FEE_POLICY = {
-  feeEgp: 0,
+  feeEgp: 600,
   deductible: true,
-  summaryAr: 'معاينة هندسية ميدانية شاملة للموقع يترأسها المهندس وفريقه الفني لرفع المقاسات وتقديم الاستشارة الإنشائية والمعمارية.',
-  summaryEn: 'Comprehensive on-site engineering survey led by the engineer and technical team to verify dimensions and provide structural consultation.',
-  paymentNoticeAr: 'يتم التنسيق وتحديد الموعد المناسب لزيارة الموقع وتأكيد التفاصيل مباشرة عبر محادثة واتساب الرسمية.',
-  paymentNoticeEn: 'Appointment scheduling and preliminary scope coordination occur directly through the official WhatsApp conversation.',
+  summaryAr: 'معاينة هندسية ميدانية شاملة للموقع يترأسها المهندس وفريقه الفني لرفع المقاسات وتقديم الاستشارة الإنشائية والمعمارية (رسوم المعاينة: 600 ج.م تُخصم بالكامل من قيمة التعاقد النهائي).',
+  summaryEn: 'Comprehensive on-site engineering survey led by the engineer and technical team (600 EGP fee, fully deductible from the final execution contract).',
+  paymentNoticeAr: 'رسوم المعاينة (600 ج.م) تُسدد عبر إنستاباي (InstaPay) أو التحويل البنكي، ولا يُعتمد الموعد نهائياً إلا بعد مراجعة وقبول الطلب وتأكيده عبر واتساب.',
+  paymentNoticeEn: 'Inspection fee (600 EGP) is payable via InstaPay or bank transfer. Appointments are confirmed only upon review, approval, and WhatsApp confirmation.',
   detailsAr: [
     'المعاينة تشمل الفحص الإنشائي والمعماري الميداني للموقع ورفع المقاسات الدقيقة ومناقشة متطلبات العميل بدقة.',
+    'رسوم المعاينة الهندسية: 600 جنيه مصري، تُخصم بالكامل من إجمالي قيمة التعاقد عند بدء التنفيذ.',
+    'طرق السداد المعتمدة: إنستاباي (InstaPay) أو التحويل البنكي مع إمكانية إرسال إيصال السداد.',
+    'لا يُعتبر الموعد مؤكداً ونهائياً إلا بعد مراجعة الطلب والموافقة عليه والتنسيق المباشر عبر واتساب.',
     'وضع التقرير الهندسي الأولي للشيرب والمناسيب وتوزيع المساحات واحتياجات التأسيس.',
-    'تقديم استشارة فنية شاملة حول أفضل الخامات والمواصفات القياسية الملائمة للموقع.',
-    'يتم تأكيد الموعد النهائي للمعاينة بالتنسيق المباشر عبر تطبيق واتساب.'
+    'تقديم استشارة فنية شاملة حول أفضل الخامات والمواصفات القياسية الملائمة للموقع.'
   ],
   detailsEn: [
     'The inspection covers physical architectural assessment, structural check, dimensions recording, and in-depth scope consultation.',
+    'Engineering survey fee: 600 EGP, fully deductible from the total execution contract value upon signing.',
+    'Accepted payment methods: InstaPay or bank transfer, with client payment receipt submission.',
+    'Appointments are officially confirmed only after company review, verification, and mutual WhatsApp coordination.',
     'Formulating engineering observations, preliminary space allocation, and rough-in requirements.',
-    'Providing comprehensive technical consultation on approved materials and construction standards.',
-    'The final appointment schedule is confirmed directly through mutual coordination on WhatsApp.'
+    'Providing comprehensive technical consultation on approved materials and construction standards.'
   ]
 };
 

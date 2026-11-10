@@ -6,8 +6,9 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { OFFICIAL_WHATSAPP_NUMBER, DISPLAY_WHATSAPP_NUMBER, OFFICIAL_WHATSAPP_LINK, buildWhatsAppLink } from '../src/config/businessConfig.js';
+import { OFFICIAL_WHATSAPP_NUMBER, DISPLAY_WHATSAPP_NUMBER, OFFICIAL_WHATSAPP_LINK, buildWhatsAppLink, BUSINESS_CONFIG } from '../src/config/businessConfig.js';
 import { APARTMENT_STAGES_MANIFEST, PORTFOLIO_SLOTS_MANIFEST, VIDEO_SLOTS_MANIFEST } from '../src/config/assetsManifest.js';
+import { getSessionSecret, createAdminSessionToken, verifyAdminSessionToken, verifyAdminPin } from '../server.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -128,7 +129,100 @@ async function runTests() {
   assert(VIDEO_SLOTS_MANIFEST.length === 12, 'VIDEO_SLOTS_MANIFEST defines 12 videos (5 original + 7 cloud)');
 
   // -----------------------------------------------------------------
-  // Summary
+  // 6. Brand Slogan, 600 EGP Fee Policy & SEO Assets Verification
+  // -----------------------------------------------------------------
+  console.log('\n--- 6. Brand Slogan, 600 EGP Fee Policy & SEO Assets ---');
+  assert(BUSINESS_CONFIG.brandLineEn === 'From Concept to Completion.', 'Official English slogan is "From Concept to Completion."');
+  assert(BUSINESS_CONFIG.brandLineAr === 'من الفكرة إلى التنفيذ.', 'Official Arabic slogan is "من الفكرة إلى التنفيذ."');
+  assert(BUSINESS_CONFIG.siteVisitFeeEgp === 600, 'Inspection fee is configured as 600 EGP');
+
+  const gscRes = await fetch(`${BASE_URL}/google562ea38037b5d640.html`);
+  const gscText = await gscRes.text();
+  assert(gscRes.status === 200, 'Google Search Console verification file returns HTTP 200 OK');
+  assert(gscText.trim() === 'google-site-verification: google562ea38037b5d640.html', 'Google Search Console verification content matches exact token');
+
+  const robotsRes = await fetch(`${BASE_URL}/robots.txt`);
+  const robotsText = await robotsRes.text();
+  assert(robotsRes.status === 200, 'robots.txt returns HTTP 200 OK');
+  assert(robotsText.includes('Sitemap: https://mohamed-hosny-nine.vercel.app/sitemap.xml'), 'robots.txt references production sitemap URL');
+
+  const sitemapRes = await fetch(`${BASE_URL}/sitemap.xml`);
+  const sitemapText = await sitemapRes.text();
+  assert(sitemapRes.status === 200, 'sitemap.xml returns HTTP 200 OK');
+  assert(sitemapText.includes('https://mohamed-hosny-nine.vercel.app/links'), 'sitemap.xml includes /links route');
+
+  // Verify stateless HMAC token format (two base64url segments separated by a period)
+  assert(loginData.token.includes('.'), 'Session token is signed HMAC stateless format (contains dot separator)');
+  assert(loginData.token.split('.').length === 2, 'Session token contains payload and cryptographic signature');
+
+  // -----------------------------------------------------------------
+  // 7. Strict Production Session & Security Hardening Tests
+  // -----------------------------------------------------------------
+  console.log('\n--- 7. Strict Production Session & Security Hardening ---');
+
+  // Save original env vars
+  const origNodeEnv = process.env.NODE_ENV;
+  const origVercel = process.env.VERCEL;
+  const origSessionSecret = process.env.ADMIN_SESSION_SECRET;
+  const origAdminPin = process.env.ADMIN_PIN;
+
+  try {
+    // A. Simulate Production with missing ADMIN_SESSION_SECRET
+    process.env.NODE_ENV = 'production';
+    delete process.env.VERCEL;
+    delete process.env.ADMIN_SESSION_SECRET;
+    process.env.ADMIN_PIN = 'custom-secure-pin-987654';
+
+    const missingSecretResult = getSessionSecret();
+    assert(missingSecretResult.secret === null, 'Production rejects missing ADMIN_SESSION_SECRET (no secret issued)');
+    assert(Boolean(missingSecretResult.error && missingSecretResult.error.includes('ADMIN_SESSION_SECRET')), 'Production returns explicit configuration error for missing ADMIN_SESSION_SECRET');
+    
+    const missingTokenResult = createAdminSessionToken();
+    assert(missingTokenResult.token === null, 'Production blocks creating session token when ADMIN_SESSION_SECRET is missing');
+
+    // B. Simulate Production with short ADMIN_SESSION_SECRET (< 32 bytes)
+    process.env.ADMIN_SESSION_SECRET = 'too-short-secret-under-32';
+    const shortSecretResult = getSessionSecret();
+    assert(shortSecretResult.secret === null, 'Production rejects short ADMIN_SESSION_SECRET (< 32 bytes)');
+    assert(Boolean(shortSecretResult.error && shortSecretResult.error.includes('at least 32 characters')), 'Production returns error requiring at least 32 characters');
+
+    // C. Simulate Production with NO fallback to ADMIN_PIN
+    process.env.ADMIN_PIN = 'my-long-admin-pin-that-is-over-32-chars-long';
+    delete process.env.ADMIN_SESSION_SECRET;
+    const fallbackPinResult = getSessionSecret();
+    assert(fallbackPinResult.secret === null, 'Production strictly forbids fallback from ADMIN_SESSION_SECRET to ADMIN_PIN');
+
+    // D. Simulate Production with default placeholder PIN
+    process.env.ADMIN_PIN = 'hosny2026';
+    const defaultPinVerification = verifyAdminPin('hosny2026');
+    assert(defaultPinVerification.valid === false, 'Production strictly rejects default PIN "hosny2026"');
+
+    // E. Simulate Production with valid 32+ character ADMIN_SESSION_SECRET and custom PIN
+    process.env.ADMIN_SESSION_SECRET = 'a1b2c3d4e5f678901234567890abcdef1234567890abcdef1234567890abcdef'; // 64 chars
+    process.env.ADMIN_PIN = 'real-custom-production-pin-4400';
+
+    const validSecretResult = getSessionSecret();
+    assert(validSecretResult.secret !== null && validSecretResult.secret.length >= 32, 'Production accepts valid ADMIN_SESSION_SECRET >= 32 chars');
+
+    const validPinVerification = verifyAdminPin('real-custom-production-pin-4400');
+    assert(validPinVerification.valid === true, 'Production accepts custom non-default PIN');
+
+    const prodTokenResult = createAdminSessionToken();
+    assert(prodTokenResult.token !== null && typeof prodTokenResult.token === 'string', 'Production creates valid session token with configured secret');
+    assert(verifyAdminSessionToken(prodTokenResult.token!) === true, 'Production verifies valid token successfully');
+
+    // F. Tampered token rejection
+    const tamperedToken = prodTokenResult.token! + 'tamper';
+    assert(verifyAdminSessionToken(tamperedToken) === false, 'Production rejects tampered session token');
+
+  } finally {
+    // Restore original environment
+    if (origNodeEnv !== undefined) process.env.NODE_ENV = origNodeEnv; else delete process.env.NODE_ENV;
+    if (origVercel !== undefined) process.env.VERCEL = origVercel; else delete process.env.VERCEL;
+    if (origSessionSecret !== undefined) process.env.ADMIN_SESSION_SECRET = origSessionSecret; else delete process.env.ADMIN_SESSION_SECRET;
+    if (origAdminPin !== undefined) process.env.ADMIN_PIN = origAdminPin; else delete process.env.ADMIN_PIN;
+  }
+
   // -----------------------------------------------------------------
   console.log('\n===============================================================');
   console.log(`TOTAL TESTS: ${passed + failed} | PASSED: ${passed} | FAILED: ${failed}`);

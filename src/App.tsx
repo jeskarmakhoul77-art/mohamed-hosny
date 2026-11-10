@@ -32,8 +32,47 @@ import { WhatsAppConfigModal } from './components/WhatsAppConfigModal';
 import { MediaSlotsModal } from './components/MediaSlotsModal';
 import { PolicyModal } from './components/PolicyModal';
 import { ImageModal } from './components/ImageModal';
+import { LinksPage } from './components/LinksPage';
 
 export default function App() {
+  // Page Routing State (Home or /links Link-in-Bio)
+  const [currentPage, setCurrentPage] = useState<'home' | 'links'>(() => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      if (path === '/links' || path.startsWith('/links') || hash === '#links') {
+        return 'links';
+      }
+    }
+    return 'home';
+  });
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      if (path === '/links' || path.startsWith('/links') || hash === '#links') {
+        setCurrentPage('links');
+      } else {
+        setCurrentPage('home');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigateTo = (page: 'home' | 'links') => {
+    setCurrentPage(page);
+    if (typeof window !== 'undefined') {
+      if (page === 'links') {
+        window.history.pushState({}, '', '/links');
+      } else {
+        window.history.pushState({}, '', '/');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   // Language State with localStorage persistence (Default to Arabic as primary Egyptian market)
   const [currentLang, setCurrentLang] = useState<Language>(() => {
     try {
@@ -137,6 +176,16 @@ export default function App() {
     window.open(url, '_blank', 'noopener,noreferrer');
   }, [currentLang]);
 
+  if (currentPage === 'links') {
+    return (
+      <LinksPage
+        currentLang={currentLang}
+        onToggleLang={toggleLanguage}
+        onNavigateHome={() => navigateTo('home')}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F7F5F0] text-[#242424] flex flex-col font-sans selection:bg-[#D1B995]/30 selection:text-[#1F4A3B]">
       {/* 1. Header Navigation with 3-Zone Contract & Direct WhatsApp CTA */}
@@ -212,6 +261,7 @@ export default function App() {
         onOpenPolicy={(type) => setPolicyType(type)}
         onOpenConfigWhatsApp={() => setIsConfigWhatsAppOpen(true)}
         onOpenMediaSlotsModal={() => setIsMediaSlotsOpen(true)}
+        onNavigateLinks={() => navigateTo('links')}
       />
 
       {/* Floating WhatsApp Action Button with 01228744400 */}

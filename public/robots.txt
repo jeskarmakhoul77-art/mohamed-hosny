@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/settings/
+Disallow: /api/upload
+
+Sitemap: https://mohamed-hosny-nine.vercel.app/sitemap.xml

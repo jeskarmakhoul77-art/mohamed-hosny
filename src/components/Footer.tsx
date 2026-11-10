@@ -3,7 +3,7 @@ import { Language } from '../types';
 import { translations } from '../translations';
 import { BrandLogo } from './BrandLogo';
 import { BUSINESS_CONFIG, FEE_POLICY, DISPLAY_WHATSAPP_NUMBER, OFFICIAL_WHATSAPP_LINK } from '../config/businessConfig';
-import { Globe, MapPin, Settings, MessageCircle, CheckCircle2, FolderOpen, Lock } from 'lucide-react';
+import { Globe, MapPin, Settings, MessageCircle, CheckCircle2, FolderOpen, Lock, Instagram, Facebook } from 'lucide-react';
 
 interface FooterProps {
   currentLang: Language;
@@ -12,6 +12,7 @@ interface FooterProps {
   onOpenPolicy: (type: 'site_visit' | 'refund' | 'privacy') => void;
   onOpenConfigWhatsApp: () => void;
   onOpenMediaSlotsModal: () => void;
+  onNavigateLinks?: () => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({
@@ -20,7 +21,8 @@ export const Footer: React.FC<FooterProps> = ({
   onOpenWhatsApp,
   onOpenPolicy,
   onOpenConfigWhatsApp,
-  onOpenMediaSlotsModal
+  onOpenMediaSlotsModal,
+  onNavigateLinks
 }) => {
   const t = translations[currentLang];
 
@@ -75,6 +77,45 @@ export const Footer: React.FC<FooterProps> = ({
                 </a>
               </div>
             </div>
+
+            {/* Official Social Media Channels */}
+            <div className="pt-3">
+              <span className="text-[11px] uppercase tracking-wider text-[#D1B995] font-semibold block mb-2">
+                {currentLang === 'ar' ? 'قنوات التواصل المعتمدة:' : 'Official Social Channels:'}
+              </span>
+              <div className="flex items-center gap-2.5">
+                <a
+                  href="https://www.instagram.com/eng1mohamed_hosny"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-lg bg-[#1F4A3B] border border-[#D1B995]/30 flex items-center justify-center text-[#D1B995] hover:text-white hover:border-[#D1B995] transition-all hover:scale-105"
+                  title="Instagram: @eng1mohamed_hosny"
+                >
+                  <Instagram className="w-4 h-4" />
+                </a>
+                <a
+                  href="https://www.facebook.com/eng.mohamedhosny"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-lg bg-[#1F4A3B] border border-[#D1B995]/30 flex items-center justify-center text-[#D1B995] hover:text-white hover:border-[#D1B995] transition-all hover:scale-105"
+                  title={currentLang === 'ar' ? 'صفحة فيسبوك: المهندس محمد حسني' : 'Facebook Page: Eng. Mohamed Hosny'}
+                >
+                  <Facebook className="w-4 h-4" />
+                </a>
+                <a
+                  href="/links"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onNavigateLinks?.();
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-[#1F4A3B] border border-[#D1B995]/40 text-xs text-[#D1B995] hover:text-white hover:border-[#D1B995] transition-all hover:scale-105 flex items-center gap-1.5 font-bold"
+                  title={currentLang === 'ar' ? 'صفحة الروابط الكاملة' : 'Full Links Directory'}
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>{currentLang === 'ar' ? 'صفحة الروابط' : '/links'}</span>
+                </a>
+              </div>
+            </div>
           </div>
 
           {/* Quick Links */}
@@ -100,6 +141,18 @@ export const Footer: React.FC<FooterProps> = ({
               </li>
               <li>
                 <a href="#about" className="hover:text-[#D1B995] transition-colors">{t.navAbout}</a>
+              </li>
+              <li>
+                <a
+                  href="/links"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onNavigateLinks?.();
+                  }}
+                  className="hover:text-[#D1B995] transition-colors font-semibold text-[#D1B995]"
+                >
+                  {currentLang === 'ar' ? 'روابط التواصل (Link in Bio)' : 'Links Directory (Bio)'}
+                </a>
               </li>
             </ul>
           </div>

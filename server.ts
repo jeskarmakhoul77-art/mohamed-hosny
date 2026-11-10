@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { INBOX_INVENTORY } from './src/config/inboxInventoryData.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,12 +35,6 @@ function getPort(): number {
 const PORT = getPort();
 const HOST = '0.0.0.0';
 const IS_PROD = process.env.NODE_ENV === 'production';
-
-// Admin Secret PIN — configured via server environment variable, never exposed in client bundle
-const ADMIN_PIN = process.env.ADMIN_PIN || 'hosny2026';
-
-// Server-side active session store (token -> { createdAt, expiresAt })
-const activeSessions = new Map<string, { createdAt: number; expiresAt: number }>();
 
 // Strict whitelist of the 50 designated slots (45 images + 5 videos)
 const VALID_SLOT_KEYS = new Set<string>([
@@ -138,10 +133,14 @@ function readLocalManifest(): {
 }
 
 function writeLocalManifest(data: any) {
+  // In Vercel / AWS Lambda serverless runtime, filesystem is read-only outside /tmp
+  if (process.env.VERCEL === '1' || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    return;
+  }
   try {
     fs.writeFileSync(manifestFilePath, JSON.stringify(data, null, 2), 'utf-8');
   } catch (err) {
-    console.error('[Manifest] Error writing local manifest:', err);
+    console.warn('[Manifest] Notice: Local filesystem is read-only or unavailable:', err);
   }
 }
 
@@ -249,6 +248,98 @@ function verifyAdminPin(inputPin: string): { valid: boolean; reason?: string } {
   return { valid: false, reason: 'Invalid administrative PIN' };
 }
 
+// -------------------------------------------------------------
+// Serverless Stateless Session Signing & Verification (HMAC-SHA256)
+// Ensures admin authentication persists across cold starts and distributed lambdas
+// -------------------------------------------------------------
+let devEphemeralSecret: string | null = null;
+
+function getSessionSecret(): { secret: string | null; error?: string } {
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+  const configuredSecret = process.env.ADMIN_SESSION_SECRET;
+
+  if (isProduction) {
+    // In Production:
+    // 1. ADMIN_SESSION_SECRET must be an independent, explicitly configured environment variable.
+    // 2. Secret length must not be less than 32 bytes (or characters).
+    // 3. FORBIDDEN to use ADMIN_PIN as fallback.
+    // 4. FORBIDDEN to have any hardcoded fallback string.
+    if (!configuredSecret || Buffer.byteLength(configuredSecret.trim(), 'utf8') < 32) {
+      return {
+        secret: null,
+        error: 'Administrative sessions disabled: ADMIN_SESSION_SECRET environment variable must be configured with at least 32 characters in production.'
+      };
+    }
+    return { secret: configuredSecret.trim() };
+  }
+
+  // Development / Preview-local environment:
+  if (configuredSecret && Buffer.byteLength(configuredSecret.trim(), 'utf8') >= 32) {
+    return { secret: configuredSecret.trim() };
+  }
+
+  // Safe ephemeral 32-byte secret generated in memory for local development lifetime
+  // Never uses static hardcoded secrets or ADMIN_PIN fallback
+  if (!devEphemeralSecret) {
+    devEphemeralSecret = crypto.randomBytes(32).toString('hex');
+  }
+  return { secret: devEphemeralSecret };
+}
+
+function createAdminSessionToken(): { token: string | null; error?: string } {
+  const { secret, error } = getSessionSecret();
+  if (!secret) {
+    return { token: null, error };
+  }
+
+  const payload = {
+    role: 'admin',
+    iat: Date.now(),
+    exp: Date.now() + 24 * 3600 * 1000 // 24-hour expiration
+  };
+  const payloadStr = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = crypto
+    .createHmac('sha256', secret)
+    .update(payloadStr)
+    .digest('base64url');
+  return { token: `${payloadStr}.${signature}` };
+}
+
+function verifyAdminSessionToken(token: string): boolean {
+  if (!token || typeof token !== 'string') return false;
+  const { secret } = getSessionSecret();
+  if (!secret) return false;
+
+  const parts = token.trim().split('.');
+  if (parts.length !== 2) return false;
+  const [payloadStr, providedSig] = parts;
+
+  try {
+    const expectedSig = crypto
+      .createHmac('sha256', secret)
+      .update(payloadStr)
+      .digest('base64url');
+
+    if (
+      providedSig.length !== expectedSig.length ||
+      !crypto.timingSafeEqual(Buffer.from(providedSig), Buffer.from(expectedSig))
+    ) {
+      return false;
+    }
+
+    const payload = JSON.parse(Buffer.from(payloadStr, 'base64url').toString('utf-8'));
+    if (!payload || payload.role !== 'admin' || typeof payload.exp !== 'number') {
+      return false;
+    }
+    if (Date.now() > payload.exp) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // Security Middleware: Strictly requires a valid active administrative session token
 function requireAdminAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
@@ -260,18 +351,13 @@ function requireAdminAuth(req: Request, res: Response, next: NextFunction) {
   }
 
   const token = authHeader.substring(7).trim();
-  const session = activeSessions.get(token);
-
-  if (!session || Date.now() > session.expiresAt) {
-    if (session) activeSessions.delete(token);
+  if (!verifyAdminSessionToken(token)) {
     return res.status(401).json({
       success: false,
       message: 'Unauthorized: Session expired or invalid token. Please authenticate.'
     });
   }
 
-  // Extend session on activity (sliding window of 24 hours)
-  session.expiresAt = Date.now() + 24 * 3600 * 1000;
   next();
 }
 
@@ -294,18 +380,20 @@ app.post('/api/auth/login', (req, res) => {
 
   const verification = verifyAdminPin(pin);
   if (verification.valid) {
-    recordLoginAttempt(ip, true);
+    const sessionResult = createAdminSessionToken();
+    if (!sessionResult.token) {
+      console.error('[Security] Admin session generation blocked:', sessionResult.error);
+      return res.status(500).json({
+        success: false,
+        message: sessionResult.error || 'Server configuration error: session signing unavailable'
+      });
+    }
 
-    // Generate cryptographically secure random session token (256-bit entropy)
-    const token = crypto.randomBytes(32).toString('hex');
-    activeSessions.set(token, {
-      createdAt: Date.now(),
-      expiresAt: Date.now() + 24 * 3600 * 1000 // 24-hour validity
-    });
+    recordLoginAttempt(ip, true);
 
     return res.json({
       success: true,
-      token,
+      token: sessionResult.token,
       message: 'Administrative authentication successful'
     });
   }
@@ -324,21 +412,11 @@ app.get('/api/auth/verify', (req, res) => {
   }
 
   const token = authHeader.substring(7).trim();
-  const session = activeSessions.get(token);
-
-  if (session && Date.now() <= session.expiresAt) {
-    return res.json({ authenticated: true });
-  }
-
-  return res.json({ authenticated: false });
+  const isValid = verifyAdminSessionToken(token);
+  return res.json({ authenticated: isValid });
 });
 
-app.post('/api/auth/logout', (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7).trim();
-    activeSessions.delete(token);
-  }
+app.post('/api/auth/logout', (_req, res) => {
   return res.json({ success: true, message: 'Logged out successfully' });
 });
 
@@ -1323,4 +1401,22 @@ async function startServer() {
   });
 }
 
-startServer();
+// In local development or standalone container, start the HTTP listener if directly executed.
+// When imported by api/index.ts in Vercel serverless functions, the Express app is exported without listening.
+const isDirectEntry = process.argv[1] && (
+  process.argv[1].endsWith('server.ts') ||
+  process.argv[1].endsWith('server.js')
+);
+
+if (isDirectEntry && process.env.VERCEL !== '1' && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  startServer();
+}
+
+export {
+  app,
+  verifyAdminPin,
+  getSessionSecret,
+  createAdminSessionToken,
+  verifyAdminSessionToken
+};
+export default app;
