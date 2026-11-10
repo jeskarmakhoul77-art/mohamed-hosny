@@ -7,6 +7,8 @@ import {
   ZoomIn,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   X,
   MessageCircle,
   Sparkles,
@@ -29,6 +31,9 @@ export const InboxGallerySection: React.FC<InboxGallerySectionProps> = ({
   // State: Category filter & search query
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Pagination state: Show 6 premier photos initially, progressively expand on demand
+  const [visibleCount, setVisibleCount] = useState<number>(6);
 
   // Lightbox index state (tracks index inside filteredPhotos)
   const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null);
@@ -58,7 +63,7 @@ export const InboxGallerySection: React.FC<InboxGallerySectionProps> = ({
 
   // Filtered photos based on category & search query (strictly excludes AI-generated mockups from public executed works)
   const filteredPhotos = useMemo(() => {
-    return INBOX_INVENTORY.filter((item: InventoryItem) => {
+    const filtered = INBOX_INVENTORY.filter((item: InventoryItem) => {
       // Exclude AI-generated concept mockups from visitor-facing executed projects
       if (item.categoryKey === 'brand_concept' || item.fileName.startsWith('Gemini_') || item.photoTypeEn.includes('AI Concept')) {
         return false;
@@ -92,6 +97,21 @@ export const InboxGallerySection: React.FC<InboxGallerySectionProps> = ({
 
       return true;
     });
+
+    // When viewing all works without a search query, prioritize 6 diverse premier real executed highlights
+    if (selectedCategory === 'all' && !searchQuery.trim()) {
+      const premierOrder = [7, 12, 6, 18, 2, 50];
+      return [...filtered].sort((a, b) => {
+        const idxA = premierOrder.indexOf(a.id);
+        const idxB = premierOrder.indexOf(b.id);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a.id - b.id;
+      });
+    }
+
+    return filtered;
   }, [selectedCategory, searchQuery]);
 
   // Current active photo in lightbox
@@ -140,35 +160,38 @@ export const InboxGallerySection: React.FC<InboxGallerySectionProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activePhotoIndex, isRtl, handlePrev, handleNext, handleCloseLightbox]);
 
+  // Sliced photos visible on page (initially 6, expandable)
+  const visiblePhotos = filteredPhotos.slice(0, visibleCount);
+
   return (
-    <section id="inbox-gallery" className="py-20 lg:py-28 bg-[#FAF8F5] text-[#242424] relative overflow-hidden">
+    <section id="inbox-gallery" className="py-12 lg:py-16 bg-[#FAF8F5] text-[#242424] relative overflow-hidden border-b border-[#D1B995]/20">
       {/* Decorative architectural grid lines */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#1F4A3B_1px,transparent_1px)] [background-size:28px_28px]" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
-        {/* Section Header */}
-        <div className="max-w-3xl mb-12 sm:mb-16">
-          <div className="flex items-center gap-2.5 text-xs font-bold tracking-widest uppercase text-[#1F4A3B] mb-3">
-            <span className="w-6 h-[2px] bg-[#D1B995]" />
+        {/* Section Header — Compacted & Sleek */}
+        <div className="max-w-3xl mb-8 sm:mb-10">
+          <div className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-[#1F4A3B] mb-2">
+            <span className="w-5 h-[1.5px] bg-[#D1B995]" />
             <span>{t.inboxKicker}</span>
           </div>
 
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#1F4A3B] mb-4">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1F4A3B] mb-2">
             {t.inboxTitle}
           </h2>
 
-          <p className="text-sm sm:text-base text-[#5C5C5C] leading-relaxed">
+          <p className="text-xs sm:text-sm text-[#5C5C5C] leading-relaxed">
             {t.inboxSubtitle}
           </p>
         </div>
 
         {/* Visitor Filter Bar: Category Tabs & Clean Search */}
-        <div className="mb-10 space-y-4">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+        <div className="mb-6 space-y-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             
             {/* Category Filter Tabs */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-thin">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 sm:pb-0 scrollbar-thin">
               {categoryTabs.map((tab) => {
                 const isActive = selectedCategory === tab.key;
                 return (
@@ -176,11 +199,12 @@ export const InboxGallerySection: React.FC<InboxGallerySectionProps> = ({
                     key={tab.key}
                     onClick={() => {
                       setSelectedCategory(tab.key);
+                      setVisibleCount(6);
                       setActivePhotoIndex(null);
                     }}
-                    className={`whitespace-nowrap px-4 py-2 text-xs sm:text-sm font-semibold rounded-xs transition-all duration-200 cursor-pointer ${
+                    className={`whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-xs transition-all duration-200 cursor-pointer ${
                       isActive
-                        ? 'bg-[#1F4A3B] text-[#F7F5F0] shadow-md border border-[#1F4A3B]'
+                        ? 'bg-[#1F4A3B] text-[#F7F5F0] shadow-sm border border-[#1F4A3B]'
                         : 'bg-white text-[#5C5C5C] hover:bg-[#F2ECE4] hover:text-[#1F4A3B] border border-[#D1B995]/30'
                     }`}
                   >
@@ -191,22 +215,26 @@ export const InboxGallerySection: React.FC<InboxGallerySectionProps> = ({
             </div>
 
             {/* Quick Search */}
-            <div className="relative w-full sm:w-72 shrink-0">
-              <Search className="w-4 h-4 text-[#5C5C5C] absolute top-1/2 -translate-y-1/2 start-3 pointer-events-none" />
+            <div className="relative w-full sm:w-64 shrink-0">
+              <Search className="w-3.5 h-3.5 text-[#5C5C5C] absolute top-1/2 -translate-y-1/2 start-3 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
+                  setVisibleCount(6);
                   setActivePhotoIndex(null);
                 }}
                 placeholder={t.inboxSearchPlaceholder}
-                className="w-full ps-9 pe-4 py-2 text-xs sm:text-sm bg-white border border-[#D1B995]/40 rounded-xs focus:outline-none focus:border-[#1F4A3B] text-[#242424] placeholder:text-[#5C5C5C]/60 shadow-xs"
+                className="w-full ps-8 pe-4 py-1.5 text-xs bg-white border border-[#D1B995]/40 rounded-xs focus:outline-none focus:border-[#1F4A3B] text-[#242424] placeholder:text-[#5C5C5C]/60 shadow-2xs"
               />
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute top-1/2 -translate-y-1/2 end-3 text-[#5C5C5C] hover:text-black text-xs font-bold"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setVisibleCount(6);
+                  }}
+                  className="absolute top-1/2 -translate-y-1/2 end-2.5 text-[#5C5C5C] hover:text-black text-xs font-bold"
                   aria-label="Clear search"
                 >
                   ✕
@@ -216,19 +244,22 @@ export const InboxGallerySection: React.FC<InboxGallerySectionProps> = ({
           </div>
 
           {/* Showing count indicator */}
-          <div className="flex items-center justify-between text-xs text-[#5C5C5C] pt-2 border-t border-[#D1B995]/20">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-[#D1B995]" />
+          <div className="flex items-center justify-between text-[11px] text-[#5C5C5C] pt-2 border-t border-[#D1B995]/20">
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3 text-[#D1B995]" />
               <span>
                 {isRtl
-                  ? `عرض ${filteredPhotos.length} من أصل 62 صورة أصلية`
-                  : `Showing ${filteredPhotos.length} of 62 authentic photos`}
+                  ? `يتم عرض ${visiblePhotos.length} من أصل ${filteredPhotos.length} صورة أصلية`
+                  : `Displaying ${visiblePhotos.length} of ${filteredPhotos.length} authentic photos`}
               </span>
             </div>
             {selectedCategory !== 'all' && (
               <button
-                onClick={() => setSelectedCategory('all')}
-                className="text-xs text-[#1F4A3B] hover:text-[#D1B995] font-semibold underline underline-offset-4 cursor-pointer"
+                onClick={() => {
+                  setSelectedCategory('all');
+                  setVisibleCount(6);
+                }}
+                className="text-[11px] text-[#1F4A3B] hover:text-[#D1B995] font-semibold underline underline-offset-4 cursor-pointer"
               >
                 {isRtl ? 'عرض كافة الصور (62)' : 'Show all photos (62)'}
               </button>
@@ -236,91 +267,137 @@ export const InboxGallerySection: React.FC<InboxGallerySectionProps> = ({
           </div>
         </div>
 
-        {/* Responsive Photo Grid (1 col mobile, 2 col small, 3 col tablet, 4 col desktop) */}
+        {/* Responsive Photo Grid (1 col mobile, 2 col small, 3 col tablet, 3 col desktop for sleek cards) */}
         {filteredPhotos.length === 0 ? (
-          <div className="py-16 text-center bg-white border border-dashed border-[#D1B995]/50 rounded-sm p-8">
-            <Layers className="w-10 h-10 text-[#D1B995] mx-auto mb-3 opacity-60" />
-            <h3 className="text-base font-bold text-[#1F4A3B] mb-1">
+          <div className="py-12 text-center bg-white border border-dashed border-[#D1B995]/50 rounded-xs p-6">
+            <Layers className="w-8 h-8 text-[#D1B995] mx-auto mb-2 opacity-60" />
+            <h3 className="text-sm font-bold text-[#1F4A3B] mb-1">
               {isRtl ? 'لا توجد صور مطابقة لبحثك' : 'No photos matching your search'}
             </h3>
-            <p className="text-xs text-[#5C5C5C] mb-4">
+            <p className="text-xs text-[#5C5C5C] mb-3">
               {isRtl ? 'جرّب البحث بكلمات أخرى أو اختر فئة أعمال مختلفة' : 'Try searching with other keywords or select a different category'}
             </p>
             <button
               onClick={() => {
                 setSelectedCategory('all');
                 setSearchQuery('');
+                setVisibleCount(6);
               }}
-              className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-[#1F4A3B] text-[#F7F5F0] hover:bg-[#152B24] rounded-xs cursor-pointer"
+              className="px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider bg-[#1F4A3B] text-[#F7F5F0] hover:bg-[#152B24] rounded-xs cursor-pointer"
             >
               {isRtl ? 'إعادة ضبط المعرض' : 'Reset Gallery'}
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {filteredPhotos.map((item, index) => {
-              const safeUrl = getSafeImageUrl(item.url);
-              const cardTitle = isRtl ? item.categoryAr : item.categoryEn;
-              const cardStage = isRtl ? item.stageAr : item.stageEn;
-              const cardDesc = isRtl ? item.descriptionAr : item.descriptionEn;
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
+              {visiblePhotos.map((item) => {
+                const globalIndex = filteredPhotos.indexOf(item);
+                const safeUrl = getSafeImageUrl(item.url);
+                const cardTitle = isRtl ? item.categoryAr : item.categoryEn;
+                const cardStage = isRtl ? item.stageAr : item.stageEn;
+                const cardDesc = isRtl ? item.descriptionAr : item.descriptionEn;
 
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => setActivePhotoIndex(index)}
-                  className="group relative bg-white border border-[#D1B995]/30 hover:border-[#D1B995] rounded-sm overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer"
-                >
-                  {/* Image Container with 4:3 Aspect Ratio */}
-                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#1F4A3B]/5">
-                    <img
-                      src={safeUrl}
-                      alt={cardDesc || cardTitle}
-                      loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => setActivePhotoIndex(globalIndex)}
+                    className="group relative bg-white border border-[#D1B995]/30 hover:border-[#D1B995] rounded-xs overflow-hidden shadow-2xs hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer"
+                  >
+                    {/* Image Container with 4:3 Aspect Ratio */}
+                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#1F4A3B]/5">
+                      <img
+                        src={safeUrl}
+                        alt={cardDesc || cardTitle}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
 
-                    {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-40 group-hover:opacity-70 transition-opacity" />
+                      {/* Gradient Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-40 group-hover:opacity-70 transition-opacity" />
 
-                    {/* Category Tag (Top-Start) */}
-                    <div className="absolute top-3 start-3">
-                      <span className="px-2.5 py-1 text-[10px] sm:text-[11px] font-semibold bg-[#1F4A3B]/90 text-[#D1B995] border border-[#D1B995]/30 rounded-xs backdrop-blur-xs shadow-xs">
-                        {cardTitle}
-                      </span>
+                      {/* Category Tag (Top-Start) */}
+                      <div className="absolute top-2.5 start-2.5">
+                        <span className="px-2 py-0.5 text-[10px] font-semibold bg-[#1F4A3B]/90 text-[#D1B995] border border-[#D1B995]/30 rounded-xs backdrop-blur-xs shadow-2xs">
+                          {cardTitle}
+                        </span>
+                      </div>
+
+                      {/* Hover Zoom Icon & Action Prompt (Centered) */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="w-10 h-10 rounded-full bg-[#1F4A3B]/90 border border-[#D1B995] text-[#D1B995] flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                          <ZoomIn className="w-4 h-4" />
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Hover Zoom Icon & Action Prompt (Centered) */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="w-11 h-11 rounded-full bg-[#1F4A3B]/90 border border-[#D1B995] text-[#D1B995] flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
-                        <ZoomIn className="w-5 h-5" />
+                    {/* Card Footer with Details — Sleek & Compact */}
+                    <div className="p-3 bg-white border-t border-[#D1B995]/20 flex flex-col justify-between flex-1">
+                      <div>
+                        <h4 className="font-bold text-xs sm:text-sm text-[#1F4A3B] line-clamp-1 group-hover:text-[#8C6D3F] transition-colors">
+                          {cardStage}
+                        </h4>
+                        <p className="text-[11px] text-[#5C5C5C] line-clamp-2 mt-1 leading-relaxed">
+                          {cardDesc}
+                        </p>
+                      </div>
+
+                      <div className="mt-2.5 pt-2 border-t border-[#D1B995]/15 flex items-center justify-between text-[10px] text-[#5C5C5C]/80">
+                        <span className="font-medium">
+                          {isRtl ? 'اضغط للتكبير والتفاصيل' : 'Click to enlarge'}
+                        </span>
+                        <span className="font-mono text-[#D1B995] font-bold">
+                          #{item.id}
+                        </span>
                       </div>
                     </div>
                   </div>
+                );
+              })}
+            </div>
 
-                  {/* Card Footer with Details */}
-                  <div className="p-3.5 bg-white border-t border-[#D1B995]/20 flex flex-col justify-between flex-1">
-                    <div>
-                      <h4 className="font-bold text-xs sm:text-sm text-[#1F4A3B] line-clamp-1 group-hover:text-[#8C6D3F] transition-colors">
-                        {cardStage}
-                      </h4>
-                      <p className="text-[11px] text-[#5C5C5C] line-clamp-2 mt-1 leading-relaxed">
-                        {cardDesc}
-                      </p>
-                    </div>
+            {/* Progressive Reveal Controller: "Show More" / "Show Less" */}
+            {filteredPhotos.length > 6 && (
+              <div className="mt-8 pt-4 border-t border-[#D1B995]/20 flex flex-col sm:flex-row items-center justify-center gap-3">
+                {visibleCount < filteredPhotos.length ? (
+                  <button
+                    onClick={() => setVisibleCount((prev) => Math.min(prev + 12, filteredPhotos.length))}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#1F4A3B] hover:bg-[#152B24] text-[#D1B995] hover:text-[#F7F5F0] border border-[#D1B995]/50 text-xs sm:text-sm font-bold uppercase tracking-wider rounded-xs shadow-md transition-all cursor-pointer group"
+                  >
+                    <span>
+                      {isRtl
+                        ? `عرض المزيد (${visibleCount} من ${filteredPhotos.length})`
+                        : `Show More (${visibleCount} of ${filteredPhotos.length})`}
+                    </span>
+                    <ChevronDown className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setVisibleCount(6);
+                      const el = document.getElementById('inbox-gallery');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-white hover:bg-[#F2ECE4] text-[#1F4A3B] border border-[#D1B995]/40 text-xs sm:text-sm font-bold uppercase tracking-wider rounded-xs shadow-2xs transition-all cursor-pointer group"
+                  >
+                    <span>
+                      {isRtl ? 'عرض أقل (أبرز 6 أعمال فقط)' : 'Show Less (Top 6 Works Only)'}
+                    </span>
+                    <ChevronUp className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
+                  </button>
+                )}
 
-                    <div className="mt-3 pt-2 border-t border-[#D1B995]/15 flex items-center justify-between text-[10px] text-[#5C5C5C]/80">
-                      <span className="font-medium">
-                        {isRtl ? 'اضغط للتكبير والتفاصيل' : 'Click to enlarge'}
-                      </span>
-                      <span className="font-mono text-[#D1B995] font-bold">
-                        #{item.id}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                {visibleCount < filteredPhotos.length && (
+                  <button
+                    onClick={() => setVisibleCount(filteredPhotos.length)}
+                    className="w-full sm:w-auto text-xs text-[#1F4A3B] hover:text-[#8C6D3F] font-semibold underline underline-offset-4 px-3 py-2 cursor-pointer transition-colors"
+                  >
+                    {isRtl ? `عرض كافة الصور (${filteredPhotos.length})` : `Show all ${filteredPhotos.length} photos`}
+                  </button>
+                )}
+              </div>
+            )}
+          </>
         )}
 
         {/* Global Bottom CTA for the Gallery */}

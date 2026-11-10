@@ -45,39 +45,42 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
   const t = translations[currentLang];
   const isRtl = currentLang === 'ar';
   const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
+  const [showAllServices, setShowAllServices] = React.useState(false);
+
+  const displayedServices = showAllServices ? CORE_SERVICES : CORE_SERVICES.slice(0, 6);
 
   return (
-    <section id="services" className="py-16 lg:py-24 bg-[#F7F5F0] text-[#242424] border-b border-[#D1B995]/20">
+    <section id="services" className="py-12 lg:py-16 bg-[#F7F5F0] text-[#242424] border-b border-[#D1B995]/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-[#B89B6A] mb-2">
+            <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-[#B89B6A] mb-1.5">
               <span className="w-5 h-[1.5px] bg-[#B89B6A]" />
               <span>{t.servicesKicker}</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1F4A3B]">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1F4A3B]">
               {t.servicesTitle}
             </h2>
-            <p className="mt-3 text-sm sm:text-base text-[#5C5C5C] leading-relaxed">
+            <p className="mt-2 text-xs sm:text-sm text-[#5C5C5C] leading-relaxed">
               {t.servicesSubtitle}
             </p>
           </div>
 
           <button
             onClick={() => onOpenWhatsApp(currentLang === 'ar' ? 'تشطيب شقق متكامل' : 'Full Apartment Fit-Out')}
-            className="inline-flex items-center gap-2 px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-[#1F4A3B] bg-[#D1B995] hover:bg-[#E5D1B0] transition-colors rounded-sm shadow-sm cursor-pointer whitespace-nowrap self-start md:self-auto"
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-[#1F4A3B] bg-[#D1B995] hover:bg-[#E5D1B0] transition-colors rounded-xs shadow-xs cursor-pointer whitespace-nowrap self-start md:self-auto"
           >
-            <MessageCircle className="w-4 h-4 fill-current/20" />
+            <MessageCircle className="w-3.5 h-3.5 fill-current/20" />
             <span>{t.bookSiteVisitBtn}</span>
-            <ArrowIcon className="w-4 h-4" />
+            <ArrowIcon className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        {/* 11 Services Grid — Harmonious Architectural Forest Green Palette */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {CORE_SERVICES.map((srv) => {
+        {/* Services Grid — Sleek, Compact Architectural Forest Green Palette */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          {displayedServices.map((srv) => {
             const IconComponent = ICON_MAP[srv.icon] || Home;
             const title = currentLang === 'ar' ? srv.titleAr : srv.titleEn;
             const summary = currentLang === 'ar' ? srv.summaryAr : srv.summaryEn;
@@ -85,27 +88,27 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
             return (
               <div
                 key={srv.id}
-                className={`relative p-6 rounded-sm border transition-all flex flex-col justify-between text-[#F7F5F0] shadow-sm hover:shadow-md ${
+                className={`relative p-4 sm:p-5 rounded-xs border transition-all flex flex-col justify-between text-[#F7F5F0] shadow-2xs hover:shadow-md ${
                   srv.featured
                     ? 'bg-gradient-to-br from-[#1F4A3B] via-[#1A382E] to-[#132720] border-[#D1B995]/50 ring-1 ring-[#D1B995]/20'
                     : 'bg-gradient-to-br from-[#1B3E32] via-[#163329] to-[#122820] border-[#D1B995]/30 hover:border-[#D1B995]/60'
                 }`}
               >
                 <div>
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-3">
                     <div
-                      className={`w-11 h-11 rounded-sm flex items-center justify-center transition-colors ${
+                      className={`w-9 h-9 rounded-xs flex items-center justify-center transition-colors ${
                         srv.featured
                           ? 'bg-[#152B24] text-[#D1B995] border border-[#D1B995]/50'
                           : 'bg-[#152B24]/80 text-[#D1B995] border border-[#D1B995]/30'
                       }`}
                     >
-                      <IconComponent className="w-5 h-5" />
+                      <IconComponent className="w-4 h-4" />
                     </div>
 
                     {/* Featured Offering Marker or Index Number */}
                     {srv.featured ? (
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#D1B995] bg-[#152B24]/90 px-2.5 py-0.5 rounded-xs border border-[#D1B995]/30">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#D1B995] bg-[#152B24]/90 px-2 py-0.5 rounded-xs border border-[#D1B995]/30">
                         {t.coreOfferingBadge}
                       </span>
                     ) : (
@@ -115,23 +118,23 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
                     )}
                   </div>
 
-                  <h3 className="text-base font-bold leading-snug mb-2 text-[#F7F5F0]">
+                  <h3 className="text-sm sm:text-base font-bold leading-snug mb-1.5 text-[#F7F5F0]">
                     {title}
                   </h3>
 
-                  <p className="text-xs sm:text-sm leading-relaxed text-[#F7F5F0]/80">
+                  <p className="text-xs leading-relaxed text-[#F7F5F0]/80">
                     {summary}
                   </p>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-[#D1B995]/20">
+                <div className="mt-4 pt-3 border-t border-[#D1B995]/20">
                   <button
                     onClick={() => onOpenWhatsApp(title)}
-                    className="inline-flex items-center gap-2 text-xs font-semibold text-[#D1B995] hover:text-[#E5D1B0] transition-colors cursor-pointer group"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#D1B995] hover:text-[#E5D1B0] transition-colors cursor-pointer group"
                   >
                     <MessageCircle className="w-3.5 h-3.5 fill-current/20 group-hover:scale-110 transition-transform" />
                     <span>{t.requestServiceQuote}</span>
-                    <ArrowIcon className="w-3.5 h-3.5" />
+                    <ArrowIcon className="w-3 h-3" />
                   </button>
                 </div>
               </div>
@@ -139,7 +142,20 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
           })}
         </div>
 
-      </div>
+        {/* View All Services Expansion Toggle */}
+        <div className="mt-6 pt-2 text-center">
+          <button
+            onClick={() => setShowAllServices(!showAllServices)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-[#1F4A3B] bg-white hover:bg-[#F2ECE4] border border-[#D1B995]/40 rounded-xs transition-all shadow-2xs cursor-pointer"
+          >
+            <span>
+              {showAllServices
+                ? (isRtl ? 'عرض أقل (الخدمات الرئيسية فقط)' : 'Show Less (Core Services Only)')
+                : (isRtl ? 'عرض كافة الخدمات الإنشائية المتخصصة (11 خدمة)' : 'View All 11 Construction Services')}
+            </span>
+          </button>
+        </div>
+
     </section>
   );
 };

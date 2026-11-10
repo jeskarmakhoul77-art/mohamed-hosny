@@ -92,7 +92,7 @@ export interface HeroSlide {
 export const HERO_SLIDES: HeroSlide[] = [
   {
     id: 1,
-    imageUrl: '/src/assets/images/hero_luxury_apartment_living_1792893858819.jpg',
+    imageUrl: '/assets/images/hero_luxury_apartment_living_1792893858819.jpg',
     titleAr: 'تشطيب سكني فاخر بإتقان هندسي',
     titleEn: 'Luxury Residential Fit-Out & Detailing',
     captionAr: 'تناغم الخامات الطبيعية مع الإضاءة المعمارية المدروسة',
@@ -100,7 +100,7 @@ export const HERO_SLIDES: HeroSlide[] = [
   },
   {
     id: 2,
-    imageUrl: '/src/assets/images/hero_architectural_finishing_details_1792893859892.jpg',
+    imageUrl: '/assets/images/hero_architectural_finishing_details_1792893859892.jpg',
     titleAr: 'دقة التأسيس وتفاصيل المحارة والجبس بورد',
     titleEn: 'Precision Plastering, MEP & Ceiling Details',
     captionAr: 'استواء هندسي للأسطح وبيوت نور مخفية بأعلى المعايير',
@@ -108,7 +108,7 @@ export const HERO_SLIDES: HeroSlide[] = [
   },
   {
     id: 3,
-    imageUrl: '/src/assets/images/hero_commercial_retail_space_1792893859170.jpg',
+    imageUrl: '/assets/images/hero_commercial_retail_space_1792893859170.jpg',
     titleAr: 'تشطيب مساحات ومحلات تجارية راقية',
     titleEn: 'High-End Commercial & Retail Fit-Outs',
     captionAr: 'واجهات وتجهيزات معمارية متينة تلائم بيئات العمل والنشاط',
@@ -116,7 +116,7 @@ export const HERO_SLIDES: HeroSlide[] = [
   },
   {
     id: 4,
-    imageUrl: '/src/assets/images/hero_luxury_dining_kitchen_1792893860066.jpg',
+    imageUrl: '/assets/images/hero_luxury_dining_kitchen_1792893860066.jpg',
     titleAr: 'تصميم داخلي معاصر وتشطيب تسليم مفتاح',
     titleEn: 'Contemporary Turnkey Interior Architecture',
     captionAr: 'من أول فكرة ومخطط حتى أدق تفصيلة في التسليم النهائي',

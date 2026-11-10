@@ -58,7 +58,7 @@ export const Hero: React.FC<HeroProps> = ({ currentLang, onOpenWhatsApp }) => {
   };
 
   return (
-    <section className="relative overflow-hidden bg-[#152B24] text-[#F7F5F0] min-h-[580px] lg:min-h-[640px] flex items-center border-b border-[#D1B995]/25">
+    <section className="relative overflow-hidden bg-[#152B24] text-[#F7F5F0] min-h-[500px] sm:min-h-[540px] lg:min-h-[580px] flex items-center border-b border-[#D1B995]/25">
       {/* 1. Cinematic Background Slideshow Layer */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
         {HERO_SLIDES.map((slide, index) => {
@@ -83,21 +83,21 @@ export const Hero: React.FC<HeroProps> = ({ currentLang, onOpenWhatsApp }) => {
           );
         })}
 
-        {/* Architectural Vignette & Text Scrim Overlay — Lighter to reveal craftsmanship */}
-        <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#152B24] via-[#152B24]/40 to-[#152B24]/20" />
-        <div className="absolute inset-0 z-20 bg-gradient-to-r rtl:bg-gradient-to-l from-[#152B24]/90 via-[#152B24]/50 to-transparent" />
+        {/* Architectural Vignette & Text Scrim Overlay — Carefully balanced for legibility and image beauty */}
+        <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#152B24]/95 via-[#152B24]/50 to-[#152B24]/35" />
+        <div className="absolute inset-0 z-20 bg-gradient-to-r rtl:bg-gradient-to-l from-[#152B24]/90 via-[#152B24]/60 to-[#152B24]/20 lg:to-transparent" />
       </div>
 
       {/* 2. Main Hero Foreground Content */}
-      <div className="relative z-30 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      <div className="relative z-30 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-16 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
           
           {/* Main Editorial Text Column */}
-          <div className="lg:col-span-8 flex flex-col items-start space-y-6">
+          <div className="lg:col-span-8 flex flex-col items-start space-y-4 sm:space-y-5">
             
             {/* Architectural Kicker & Service Area */}
-            <div className="inline-flex flex-wrap items-center gap-2.5 text-xs font-semibold tracking-wider uppercase text-[#D1B995] bg-[#152B24]/80 px-3.5 py-1.5 rounded-sm border border-[#D1B995]/30 backdrop-blur-sm">
-              <span className="w-5 h-[1.5px] bg-[#D1B995]" />
+            <div className="inline-flex flex-wrap items-center gap-2 text-[11px] sm:text-xs font-semibold tracking-wider uppercase text-[#D1B995] bg-[#152B24]/85 px-3 py-1 rounded-xs border border-[#D1B995]/30 backdrop-blur-sm shadow-xs">
+              <span className="w-4 h-[1.5px] bg-[#D1B995]" />
               <span>{t.heroTagline}</span>
               <span className="text-[#F7F5F0]/40">·</span>
               <span className="inline-flex items-center gap-1 text-[#F7F5F0]/90">
@@ -107,17 +107,17 @@ export const Hero: React.FC<HeroProps> = ({ currentLang, onOpenWhatsApp }) => {
             </div>
 
             {/* Headline with clean drop shadow */}
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#F7F5F0] leading-[1.2] text-balance drop-shadow-[0_2px_12px_rgba(0,0,0,0.7)]">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-[2.75rem] font-bold tracking-tight text-[#F7F5F0] leading-[1.2] text-balance drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
               {t.heroHeadline}
             </h1>
 
             {/* Subtitle */}
-            <p className="text-base sm:text-lg text-[#F7F5F0] leading-relaxed max-w-2xl font-light drop-shadow-[0_1px_6px_rgba(0,0,0,0.6)]">
+            <p className="text-sm sm:text-base text-[#F7F5F0]/95 leading-relaxed max-w-2xl font-normal drop-shadow-[0_1px_6px_rgba(0,0,0,0.7)]">
               {t.heroSubheadline}
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-2 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1 w-full sm:w-auto">
               {/* Primary WhatsApp Booking Button */}
               <a
                 href={OFFICIAL_WHATSAPP_LINK}
@@ -128,19 +128,19 @@ export const Hero: React.FC<HeroProps> = ({ currentLang, onOpenWhatsApp }) => {
                   onOpenWhatsApp(currentLang === 'ar' ? 'تشطيب شقق متكامل' : 'Full Apartment Fit-Out');
                 }}
                 title={currentLang === 'ar' ? `واتساب: ${DISPLAY_WHATSAPP_NUMBER}` : `WhatsApp: ${DISPLAY_WHATSAPP_NUMBER}`}
-                className="inline-flex items-center justify-center gap-3 px-8 py-4 text-sm font-bold uppercase tracking-wider text-[#1F4A3B] bg-[#D1B995] hover:bg-[#E5D1B0] transition-all rounded-sm shadow-lg cursor-pointer whitespace-nowrap focus-visible:ring-2 focus-visible:ring-white group"
+                className="inline-flex items-center justify-center gap-2.5 px-6 py-3 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#1F4A3B] bg-[#D1B995] hover:bg-[#E5D1B0] transition-all rounded-xs shadow-md cursor-pointer whitespace-nowrap focus-visible:ring-2 focus-visible:ring-white group"
               >
-                <MessageCircle className="w-5 h-5 text-[#1F4A3B] fill-current/20 group-hover:scale-110 transition-transform" />
+                <MessageCircle className="w-4 h-4 text-[#1F4A3B] fill-current/20 group-hover:scale-110 transition-transform" />
                 <span>{t.heroPrimaryCta}</span>
               </a>
 
               {/* Secondary Explore Work Button */}
               <a
-                href="#apartment-case-study"
-                className="inline-flex items-center justify-center gap-2 px-6 py-4 text-sm font-semibold text-[#F7F5F0] hover:text-[#D1B995] bg-[#152B24]/60 hover:bg-[#152B24] border border-[#F7F5F0]/25 hover:border-[#D1B995] transition-all rounded-sm cursor-pointer whitespace-nowrap backdrop-blur-xs"
+                href="#inbox-gallery"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 text-xs sm:text-sm font-semibold text-[#F7F5F0] hover:text-[#D1B995] bg-[#152B24]/70 hover:bg-[#152B24] border border-[#F7F5F0]/25 hover:border-[#D1B995] transition-all rounded-xs cursor-pointer whitespace-nowrap backdrop-blur-xs"
               >
                 <span>{t.heroSecondaryCta}</span>
-                <ArrowIcon className="w-4 h-4" />
+                <ArrowIcon className="w-3.5 h-3.5" />
               </a>
             </div>
 
@@ -150,7 +150,7 @@ export const Hero: React.FC<HeroProps> = ({ currentLang, onOpenWhatsApp }) => {
           <div className="lg:col-span-4 flex flex-col justify-end items-end space-y-4">
             
             {/* Active Slide Architectural Mood Card */}
-            <div className="w-full bg-[#152B24]/85 border border-[#D1B995]/30 rounded-sm p-4 backdrop-blur-md shadow-xl text-xs space-y-2">
+            <div className="w-full bg-[#152B24]/85 border border-[#D1B995]/30 rounded-xs p-3 sm:p-3.5 backdrop-blur-md shadow-lg text-xs space-y-1.5">
               <div className="flex items-center justify-between text-[#D1B995] text-[10px] uppercase font-mono font-bold tracking-wider">
                 <span className="flex items-center gap-1.5">
                   <Sparkles className="w-3 h-3" />
@@ -160,13 +160,13 @@ export const Hero: React.FC<HeroProps> = ({ currentLang, onOpenWhatsApp }) => {
                   0{activeSlide.id} / 0{HERO_SLIDES.length}
                 </span>
               </div>
-              <p className="font-bold text-sm text-[#F7F5F0]">
+              <p className="font-bold text-xs sm:text-sm text-[#F7F5F0]">
                 {currentLang === 'ar' ? activeSlide.titleAr : activeSlide.titleEn}
               </p>
-              <p className="text-[11px] text-[#F7F5F0]/70 leading-relaxed">
+              <p className="text-[11px] text-[#F7F5F0]/75 leading-relaxed line-clamp-2">
                 {currentLang === 'ar' ? activeSlide.captionAr : activeSlide.captionEn}
               </p>
-              <div className="pt-2 border-t border-[#F7F5F0]/10 flex items-center gap-1.5 text-[10px] text-[#D1B995]">
+              <div className="pt-1.5 border-t border-[#F7F5F0]/10 flex items-center gap-1.5 text-[10px] text-[#D1B995]">
                 <Info className="w-3 h-3 shrink-0" />
                 <span className="truncate">{t.slideshowDisclaimer}</span>
               </div>
