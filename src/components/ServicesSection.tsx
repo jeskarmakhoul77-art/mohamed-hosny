@@ -156,6 +156,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
           </button>
         </div>
 
+      </div>
     </section>
   );
 };

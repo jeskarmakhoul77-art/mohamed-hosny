@@ -34,20 +34,20 @@ export const ApartmentCaseStudy: React.FC<ApartmentCaseStudyProps> = ({
   const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
 
   return (
-    <section id="apartment-case-study" className="py-16 lg:py-24 bg-[#FAF8F5] text-[#242424] border-b border-[#D1B995]/20">
+    <section id="apartment-case-study" className="py-10 sm:py-12 lg:py-14 bg-[#FAF8F5] text-[#242424] border-b border-[#D1B995]/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-[#B89B6A] mb-2">
+            <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-[#B89B6A] mb-1.5">
               <span className="w-5 h-[1.5px] bg-[#B89B6A]" />
               <span>{t.apartmentKicker}</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1F4A3B]">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1F4A3B]">
               {t.apartmentTitle}
             </h2>
-            <p className="mt-3 text-sm sm:text-base text-[#5C5C5C] leading-relaxed">
+            <p className="mt-2 text-xs sm:text-sm text-[#5C5C5C] leading-relaxed">
               {t.apartmentSubtitle}
             </p>
           </div>
@@ -55,30 +55,30 @@ export const ApartmentCaseStudy: React.FC<ApartmentCaseStudyProps> = ({
           <div className="shrink-0">
             <button
               onClick={() => onOpenWhatsApp(currentLang === 'ar' ? 'تشطيب شقة متكامل (مماثل لدراسة الحالة)' : 'Full Apartment Fit-Out (Similar Project)')}
-              className="inline-flex items-center gap-2 px-5 py-3 text-xs font-bold uppercase tracking-wider text-[#1F4A3B] bg-[#D1B995] hover:bg-[#E5D1B0] transition-colors rounded-sm shadow-sm cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[#1F4A3B] bg-[#D1B995] hover:bg-[#E5D1B0] transition-colors rounded-xs shadow-xs cursor-pointer"
             >
-              <MessageCircle className="w-4 h-4 fill-current/20" />
+              <MessageCircle className="w-3.5 h-3.5 fill-current/20" />
               <span>{t.requestSimilarProject}</span>
-              <ArrowIcon className="w-4 h-4" />
+              <ArrowIcon className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
         {/* Authenticity Notice & Slot Format Instruction */}
-        <div className="mb-8 p-4 bg-[#F2EEE5] border border-[#D1B995]/40 rounded-sm text-xs text-[#5C5C5C] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <AlertCircle className="w-4 h-4 text-[#B89B6A] shrink-0" />
+        <div className="mb-5 p-3 bg-[#F2EEE5] border border-[#D1B995]/40 rounded-xs text-xs text-[#5C5C5C] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-3.5 h-3.5 text-[#B89B6A] shrink-0" />
             <span>{t.apartmentAuthenticNotice}</span>
           </div>
-          <div className="flex items-center gap-2 font-mono text-[11px] text-[#1F4A3B] bg-white px-3 py-1.5 rounded-xs border border-[#D1B995]/30">
-            <FolderOpen className="w-3.5 h-3.5 text-[#B89B6A]" />
+          <div className="flex items-center gap-1.5 font-mono text-[10px] text-[#1F4A3B] bg-white px-2.5 py-1 rounded-2xs border border-[#D1B995]/30">
+            <FolderOpen className="w-3 h-3 text-[#B89B6A]" />
             <span>public/assets/projects/apartment/</span>
           </div>
         </div>
 
         {/* 5-Stage Chronological Progress Bar (Desktop & Tablet) */}
-        <div className="mb-10 bg-white border border-[#D1B995]/30 rounded-sm p-4 shadow-sm">
-          <div className="grid grid-cols-5 gap-2 text-center">
+        <div className="mb-6 bg-white border border-[#D1B995]/30 rounded-xs p-2.5 sm:p-3 shadow-2xs">
+          <div className="grid grid-cols-5 gap-1.5 sm:gap-2 text-center">
             {stages.map((stage, idx) => {
               const isActive = idx === activeStageIndex;
               const isPassed = idx < activeStageIndex;

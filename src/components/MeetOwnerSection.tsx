@@ -18,25 +18,25 @@ export const MeetOwnerSection: React.FC<MeetOwnerSectionProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
 
   return (
-    <section className="py-16 lg:py-24 bg-[#F7F5F0] text-[#242424] border-b border-[#D1B995]/20">
+    <section className="py-10 sm:py-12 lg:py-14 bg-[#F7F5F0] text-[#242424] border-b border-[#D1B995]/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="max-w-3xl mb-12">
-          <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-[#B89B6A] mb-2">
+        <div className="max-w-3xl mb-6">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-[#B89B6A] mb-1.5">
             <span className="w-5 h-[1.5px] bg-[#B89B6A]" />
             <span>{t.ownerSectionKicker}</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1F4A3B]">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1F4A3B]">
             {t.ownerSectionTitle}
           </h2>
-          <p className="mt-4 text-base text-[#5C5C5C] leading-relaxed">
+          <p className="mt-2 text-xs sm:text-sm text-[#5C5C5C] leading-relaxed">
             {t.ownerIntroParagraph}
           </p>
         </div>
 
         {/* Video Presentation Card */}
-        <div className="relative rounded-sm overflow-hidden border border-[#D1B995]/30 bg-[#152B24] shadow-xl">
+        <div className="relative rounded-xs overflow-hidden border border-[#D1B995]/30 bg-[#152B24] shadow-md">
           <div className="grid grid-cols-1 lg:grid-cols-12">
             
             {/* Visual Player Canvas */}

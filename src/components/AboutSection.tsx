@@ -34,18 +34,18 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ currentLang }) => {
   ];
 
   return (
-    <section id="about" className="py-16 lg:py-24 bg-[#F7F5F0] text-[#242424] border-b border-[#D1B995]/20">
+    <section id="about" className="py-10 sm:py-12 lg:py-14 bg-[#F7F5F0] text-[#242424] border-b border-[#D1B995]/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
           {/* Left Column: Text narrative */}
-          <div className="lg:col-span-7 space-y-6">
+          <div className="lg:col-span-7 space-y-4 sm:space-y-5">
             <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-[#B89B6A]">
               <span className="w-5 h-[1.5px] bg-[#B89B6A]" />
               <span>{t.aboutKicker}</span>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1F4A3B]">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-[#1F4A3B]">
               {t.aboutTitle}
             </h2>
 

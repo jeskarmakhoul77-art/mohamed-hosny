@@ -41,29 +41,29 @@ export const EngineerProfileSection: React.FC<EngineerProfileSectionProps> = ({
   };
 
   return (
-    <section id="engineer-profile" className="py-16 lg:py-24 bg-[#FAF8F5] text-[#242424] border-b border-[#D1B995]/20">
+    <section id="engineer-profile" className="py-10 sm:py-12 lg:py-14 bg-[#FAF8F5] text-[#242424] border-b border-[#D1B995]/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Kicker & Header */}
-        <div className="max-w-3xl mb-12">
-          <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-[#B89B6A] mb-2">
+        <div className="max-w-3xl mb-8 sm:mb-10">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-[#B89B6A] mb-1.5">
             <span className="w-5 h-[1.5px] bg-[#B89B6A]" />
             <span>{t.engSectionKicker}</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1F4A3B]">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-[#1F4A3B]">
             {t.engSectionTitle}
           </h2>
-          <p className="mt-3 text-sm sm:text-base text-[#5C5C5C] leading-relaxed">
+          <p className="mt-2 text-xs sm:text-sm text-[#5C5C5C] leading-relaxed">
             {t.engSectionSubtitle}
           </p>
         </div>
 
         {/* Two-Column Grid: Biography & Engineering Pillars (Left/Right depending on Lang) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
           
           {/* Column 1: Engineering Narrative & Core Technical Pillars (7 Cols) */}
-          <div className="lg:col-span-7 space-y-6">
-            <div className="p-6 sm:p-8 bg-white border border-[#D1B995]/30 rounded-sm shadow-xs space-y-4">
+          <div className="lg:col-span-7 space-y-5">
+            <div className="p-5 sm:p-6 bg-white border border-[#D1B995]/30 rounded-sm shadow-xs space-y-4">
               <div className="flex items-center gap-3 border-b border-[#F2EEE5] pb-4">
                 <div className="w-10 h-10 rounded-sm bg-[#1F4A3B] text-[#D1B995] flex items-center justify-center shrink-0">
                   <Compass className="w-5 h-5" />

@@ -14,7 +14,8 @@ import {
   Film,
   CheckCircle2,
   ExternalLink,
-  Lock
+  Lock,
+  ChevronDown
 } from 'lucide-react';
 
 interface VideoLibraryProps {
@@ -36,6 +37,7 @@ export const VideoLibrary: React.FC<VideoLibraryProps> = ({
 
   // Filter mode: 'all' (all 12 videos), 'original' (5 original slots), or 'cloud' (7 additional cloud videos)
   const [viewFilter, setViewFilter] = useState<'all' | 'original' | 'cloud'>('all');
+  const [showAllVideos, setShowAllVideos] = useState<boolean>(false);
 
   // Filtered list based on view mode
   const displayedVideos = useMemo(() => {
@@ -48,30 +50,32 @@ export const VideoLibrary: React.FC<VideoLibraryProps> = ({
     return videoSlots;
   }, [viewFilter, videoSlots]);
 
+  const visibleVideos = showAllVideos ? displayedVideos : displayedVideos.slice(0, 6);
+
   return (
-    <section id="videos" className="py-16 lg:py-24 bg-[#FAF8F5] text-[#242424] border-b border-[#D1B995]/20">
+    <section id="videos" className="py-10 sm:py-12 lg:py-14 bg-[#FAF8F5] text-[#242424] border-b border-[#D1B995]/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-[#B89B6A] mb-2">
+            <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wider uppercase text-[#B89B6A] mb-1.5">
               <span className="w-5 h-[1.5px] bg-[#B89B6A]" />
               <span>{isRtl ? 'التوثيق المرئي الميداني' : 'On-Site Video Documentation'}</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1F4A3B]">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1F4A3B]">
               {isRtl ? 'مكتبة الفيديوهات التوثيقية الكاملة (12 فيديو)' : 'Comprehensive Project Video Library (12 Videos)'}
             </h2>
-            <p className="mt-3 text-sm sm:text-base text-[#5C5C5C] leading-relaxed">
+            <p className="mt-2 text-xs sm:text-sm text-[#5C5C5C] leading-relaxed">
               {isRtl
-                ? 'توثيق مرئي ميداني شامل يضم الـ 5 فيديوهات الأصلية المعتمدة للمؤسسة بالإضافة إلى الـ 7 فيديوهات السحابية الجديدة التي تغطي كافة تفاصيل التنفيذ والتشطيب.'
+                ? 'توثيق مرئي ميداني شامل يضم الـ 5 فيديوهات الأصلية المعتمدة بالإضافة إلى الـ 7 فيديوهات السحابية التي تغطي تفاصيل التنفيذ.'
                 : 'Complete documentary video archive featuring all 5 original foundation videos alongside the 7 new cloud-streamed execution walkthroughs.'}
             </p>
           </div>
 
           {/* Quick Target Path Pill */}
-          <div className="hidden md:flex items-center gap-2 font-mono text-[11px] text-[#1F4A3B] bg-white px-3.5 py-2 rounded-xs border border-[#D1B995]/30 shrink-0">
-            <FolderOpen className="w-3.5 h-3.5 text-[#B89B6A]" />
+          <div className="hidden md:flex items-center gap-2 font-mono text-[10px] text-[#1F4A3B] bg-white px-3 py-1.5 rounded-xs border border-[#D1B995]/30 shrink-0">
+            <FolderOpen className="w-3 h-3 text-[#B89B6A]" />
             <span>5 Original + 7 Supabase Cloud</span>
           </div>
         </div>
@@ -130,8 +134,8 @@ export const VideoLibrary: React.FC<VideoLibraryProps> = ({
         </div>
 
         {/* Video Slots Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {displayedVideos.map((video, idx) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          {visibleVideos.map((video, idx) => {
             const title = currentLang === 'ar' ? video.titleAr : video.titleEn;
             const subtitle = currentLang === 'ar' ? video.subtitleAr : video.subtitleEn;
             const desc = currentLang === 'ar' ? video.descriptionAr : video.descriptionEn;
@@ -287,6 +291,23 @@ export const VideoLibrary: React.FC<VideoLibraryProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Show More / Show Less Toggle for Videos */}
+        {displayedVideos.length > 6 && (
+          <div className="mt-8 text-center">
+            <button
+              onClick={() => setShowAllVideos(!showAllVideos)}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-sm bg-[#FAF8F5] border border-[#D1B995] text-[#1F4A3B] hover:bg-[#1F4A3B] hover:text-[#D1B995] transition-colors duration-200 text-xs sm:text-sm font-semibold shadow-xs cursor-pointer"
+            >
+              <span>
+                {showAllVideos
+                  ? (isRtl ? 'عرض أقل' : 'Show Less')
+                  : (isRtl ? `عرض كل الفيديوهات (${displayedVideos.length} فيديو)` : `Show All Videos (${displayedVideos.length} videos)`)}
+              </span>
+              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showAllVideos ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+        )}
 
         {/* Video Player Modal */}
         {activeVideoModal && (
