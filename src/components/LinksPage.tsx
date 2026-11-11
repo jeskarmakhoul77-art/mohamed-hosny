@@ -58,11 +58,11 @@ export const LinksPage: React.FC<LinksPageProps> = ({
     {
       id: 'instagram',
       title: isAr ? 'إنستغرام' : 'Instagram',
-      subtitle: '@eng1mohamed_hosny — لقطات وفيديوهات تنفيذية من المواقع',
+      subtitle: isAr ? '@eng1mohamed_hosny — لقطات وفيديوهات تنفيذية من المواقع' : '@eng1mohamed_hosny — On-site fit-out clips & stories',
       icon: Instagram,
       url: 'https://www.instagram.com/eng1mohamed_hosny',
       isInternal: false,
-      badge: 'Meta Verified'
+      badge: isAr ? 'حساب موثق' : 'Meta Verified'
     },
     {
       id: 'facebook',
@@ -76,11 +76,11 @@ export const LinksPage: React.FC<LinksPageProps> = ({
     {
       id: 'tiktok',
       title: isAr ? 'تيك توك' : 'TikTok',
-      subtitle: '@eng1mohamed_hosny — جولات ومراحل التشطيب السريع',
+      subtitle: isAr ? '@eng1mohamed_hosny — جولات ومراحل التشطيب السريع' : '@eng1mohamed_hosny — Quick walkthroughs & progress reels',
       icon: Video,
       url: 'https://www.tiktok.com/@eng1mohamed_hosny',
       isInternal: false,
-      badge: 'Reels & Clips'
+      badge: isAr ? 'مقاطع سريعة' : 'Reels & Clips'
     },
     {
       id: 'youtube',
@@ -89,7 +89,7 @@ export const LinksPage: React.FC<LinksPageProps> = ({
       icon: Youtube,
       url: 'https://www.youtube.com/@eng1mohamed_hosny',
       isInternal: false,
-      badge: 'HD Videos'
+      badge: isAr ? 'فيديوهات عالية الدقة' : 'HD Videos'
     },
     {
       id: 'app',

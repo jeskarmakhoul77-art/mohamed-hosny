@@ -7,6 +7,7 @@ interface ImageModalProps {
   title: string;
   description: string;
   imageUrl?: string;
+  currentLang?: string;
 }
 
 export const ImageModal: React.FC<ImageModalProps> = ({
@@ -14,7 +15,8 @@ export const ImageModal: React.FC<ImageModalProps> = ({
   onClose,
   title,
   description,
-  imageUrl
+  imageUrl,
+  currentLang = 'ar'
 }) => {
   if (!isOpen) return null;
 
@@ -29,7 +31,7 @@ export const ImageModal: React.FC<ImageModalProps> = ({
       >
         <div className="flex items-center justify-between px-5 py-3 border-b border-[#D1B995]/20 bg-[#0D1A16]">
           <h4 className="text-sm font-bold text-[#D1B995]">{title}</h4>
-          <button onClick={onClose} className="p-1 text-[#F7F5F0]/70 hover:text-white">
+          <button onClick={onClose} className="p-1 text-[#F7F5F0]/70 hover:text-white cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -39,7 +41,7 @@ export const ImageModal: React.FC<ImageModalProps> = ({
             <img src={imageUrl} alt={title} className="max-h-[70vh] w-auto object-contain" />
           ) : (
             <div className="p-12 text-center text-xs text-[#D1B995]">
-              خانة مخصصة لرفع الصورة الأصلية
+              {currentLang === 'en' ? 'Designated slot awaiting authentic photo' : 'خانة مخصصة لرفع الصورة الأصلية'}
             </div>
           )}
         </div>

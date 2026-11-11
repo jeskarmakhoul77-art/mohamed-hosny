@@ -300,6 +300,7 @@ export default function App() {
         title={imageModalData.title}
         description={imageModalData.description}
         imageUrl={imageModalData.imageUrl}
+        currentLang={currentLang}
       />
     </div>
   );

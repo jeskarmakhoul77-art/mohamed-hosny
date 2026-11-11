@@ -91,9 +91,9 @@ export const MeetOwnerSection: React.FC<MeetOwnerSectionProps> = ({
                   <p className="mt-2 text-xs sm:text-sm text-[#F7F5F0]/70 max-w-md">
                     {t.ownerVideoInstruction}
                   </p>
-                  <div className="mt-5 inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium bg-[#1F4A3B] border border-[#D1B995]/30 text-[#D1B995] rounded-sm">
+                  <div className="mt-5 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#1F4A3B] border border-[#D1B995]/30 text-[#D1B995] rounded-xs">
                     <Info className="w-3.5 h-3.5 shrink-0" />
-                    <span>{currentLang === 'ar' ? 'خانة الفيديو رقم 01 — مخصصة لحديث مؤسس العمل' : 'Video Slot 01 — Reserved for Owner Presentation'}</span>
+                    <span>{currentLang === 'ar' ? 'عرض مرئي — حديث مؤسس الشركة والمهندس المشرف' : 'Official Presentation — Founder & Lead Engineer'}</span>
                   </div>
                 </div>
               )}

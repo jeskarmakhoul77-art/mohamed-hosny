@@ -64,18 +64,6 @@ export const ApartmentCaseStudy: React.FC<ApartmentCaseStudyProps> = ({
           </div>
         </div>
 
-        {/* Authenticity Notice & Slot Format Instruction */}
-        <div className="mb-5 p-3 bg-[#F2EEE5] border border-[#D1B995]/40 rounded-xs text-xs text-[#5C5C5C] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-3.5 h-3.5 text-[#B89B6A] shrink-0" />
-            <span>{t.apartmentAuthenticNotice}</span>
-          </div>
-          <div className="flex items-center gap-1.5 font-mono text-[10px] text-[#1F4A3B] bg-white px-2.5 py-1 rounded-2xs border border-[#D1B995]/30">
-            <FolderOpen className="w-3 h-3 text-[#B89B6A]" />
-            <span>public/assets/projects/apartment/</span>
-          </div>
-        </div>
-
         {/* 5-Stage Chronological Progress Bar (Desktop & Tablet) */}
         <div className="mb-6 bg-white border border-[#D1B995]/30 rounded-xs p-2.5 sm:p-3 shadow-2xs">
           <div className="grid grid-cols-5 gap-1.5 sm:gap-2 text-center">
@@ -86,7 +74,7 @@ export const ApartmentCaseStudy: React.FC<ApartmentCaseStudyProps> = ({
                 <button
                   key={stage.stageNumber}
                   onClick={() => setActiveStageIndex(idx)}
-                  className={`flex flex-col items-center p-3 rounded-sm transition-all text-left cursor-pointer ${
+                  className={`flex flex-col items-center p-2.5 sm:p-3 rounded-sm transition-all text-left cursor-pointer ${
                     isActive
                       ? 'bg-[#1F4A3B] text-[#F7F5F0] shadow-md'
                       : 'hover:bg-[#F2EEE5] text-[#242424]'
@@ -110,9 +98,6 @@ export const ApartmentCaseStudy: React.FC<ApartmentCaseStudyProps> = ({
                   </div>
                   <span className="text-xs font-semibold line-clamp-1">
                     {currentLang === 'ar' ? stage.titleAr : stage.titleEn}
-                  </span>
-                  <span className="text-[10px] font-mono text-[#D1B995] opacity-80 mt-1">
-                    {stage.slotKey}
                   </span>
                 </button>
               );
@@ -141,43 +126,38 @@ export const ApartmentCaseStudy: React.FC<ApartmentCaseStudyProps> = ({
                   }
                 />
               ) : (
-                /* Clear honest placeholder for this stage with Slot Key and Target Path */
+                /* Dignified Architectural Stage Placeholder */
                 <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-gradient-to-br from-[#1F4A3B] to-[#152B24] text-[#F7F5F0]">
                   <div className="w-14 h-14 rounded-full border border-[#D1B995]/40 bg-[#162C26] flex items-center justify-center text-[#D1B995] mb-3">
                     <ImageIcon className="w-7 h-7" />
                   </div>
                   
-                  {/* Slot Key Badge */}
+                  {/* Stage Number Badge */}
                   <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#152B24] border border-[#D1B995]/40 rounded-xs mb-2">
-                    <span className="text-[11px] font-mono font-bold text-[#D1B995]">
-                      {activeStage.slotKey}
+                    <span className="text-xs font-bold text-[#D1B995]">
+                      {currentLang === 'ar' ? `المرحلة 0${activeStage.stageNumber}` : `Stage 0${activeStage.stageNumber}`}
                     </span>
                     <span className="text-white/40">|</span>
-                    <span className="text-[11px] font-mono text-white/80">
-                      0{activeStage.stageNumber} / 05
+                    <span className="text-xs text-white/80">
+                      {currentLang === 'ar' ? 'من 05 مراحل' : 'of 5 Stages'}
                     </span>
                   </div>
 
-                  <h4 className="text-lg font-bold text-[#F7F5F0] mt-1">
+                  <h4 className="text-base sm:text-lg font-bold text-[#F7F5F0] mt-1">
                     {currentLang === 'ar' ? activeStage.titleAr : activeStage.titleEn}
                   </h4>
                   
-                  <p className="text-xs text-[#F7F5F0]/70 mt-2 max-w-sm">
+                  <p className="text-xs text-[#F7F5F0]/75 mt-2 max-w-sm leading-relaxed">
                     {currentLang === 'ar'
-                      ? 'خانة مخصصة لرفع الصورة الفوتوغرافية الحقيقية لهذه المرحلة من الشقة.'
-                      : 'Designated slot awaiting genuine photographic asset of this stage.'}
+                      ? 'التسليم النهائي وتنسيق الديكور والإضاءة — مرحلة قيد التوثيق والتصوير الميداني.'
+                      : 'Final handover, styling, and architectural illumination — in on-site photographic documentation.'}
                   </p>
-
-                  <div className="mt-4 px-3 py-1.5 bg-[#152B24]/90 border border-[#D1B995]/30 text-[11px] font-mono text-[#D1B995] rounded-sm flex items-center gap-1.5">
-                    <span>{currentLang === 'ar' ? 'المسار المطلوب: ' : 'Target Path: '}</span>
-                    <strong>{activeStage.defaultFilePath}</strong>
-                  </div>
                 </div>
               )}
 
               {/* Stage Counter Overlay */}
-              <div className="absolute top-4 left-4 px-2.5 py-1 bg-[#152B24]/90 backdrop-blur-sm border border-[#D1B995]/30 text-[#D1B995] text-xs font-mono font-bold rounded-sm">
-                {activeStage.slotKey}
+              <div className="absolute top-4 left-4 rtl:left-auto rtl:right-4 px-2.5 py-1 bg-[#152B24]/90 backdrop-blur-sm border border-[#D1B995]/30 text-[#D1B995] text-xs font-bold rounded-sm">
+                {currentLang === 'ar' ? `المرحلة 0${activeStage.stageNumber}` : `Stage 0${activeStage.stageNumber}`}
               </div>
             </div>
 
@@ -185,7 +165,9 @@ export const ApartmentCaseStudy: React.FC<ApartmentCaseStudyProps> = ({
             <div className="lg:col-span-5 p-4 sm:p-6 flex flex-col justify-between bg-white text-[#242424]">
               <div className="space-y-3">
                 <div className="text-[11px] font-bold uppercase tracking-wider text-[#B89B6A]">
-                  {currentLang === 'ar' ? activeStage.phaseLabelAr : activeStage.phaseLabelEn} · {activeStage.slotKey}
+                  {currentLang === 'ar'
+                    ? `المرحلة 0${activeStage.stageNumber}: ${activeStage.phaseLabelAr}`
+                    : `Stage 0${activeStage.stageNumber}: ${activeStage.phaseLabelEn}`}
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold text-[#1F4A3B]">
                   {currentLang === 'ar' ? activeStage.titleAr : activeStage.titleEn}

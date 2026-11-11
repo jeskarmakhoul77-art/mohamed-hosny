@@ -185,27 +185,21 @@ export const VideoLibrary: React.FC<VideoLibraryProps> = ({
                         <Clock className="w-3 h-3 text-amber-400" />
                         <span>{isRtl ? 'قريبًا — بانتظار رفع الفيديو الفعلي' : 'Coming Soon — Video in Production'}</span>
                       </span>
-
-                      <p className="text-[10px] font-mono text-[#D1B995]/80 mt-2 truncate max-w-full px-2">
-                        {video.defaultFilePath}
-                      </p>
                     </div>
                   )}
 
                   {/* Slot Number Tag & Source Badge */}
                   <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap">
-                    <div className="px-2 py-0.5 bg-[#152B24]/90 text-[#D1B995] text-[10px] font-mono font-bold rounded-sm border border-[#D1B995]/20 flex items-center gap-1.5">
-                      <span>#{idx + 1}</span>
-                      <span>·</span>
-                      <span>{video.slotKey}</span>
+                    <div className="px-2 py-0.5 bg-[#152B24]/90 text-[#D1B995] text-[10px] font-bold rounded-sm border border-[#D1B995]/20 flex items-center gap-1.5">
+                      <span>{isRtl ? `فيديو 0${idx + 1}` : `Video 0${idx + 1}`}</span>
                     </div>
                     {video.videoUrl?.includes('supabase.co') ? (
-                      <span className="px-1.5 py-0.5 bg-emerald-900/90 text-[#3ECF8E] text-[9px] font-mono font-bold rounded-xs border border-emerald-500/40">
-                        Supabase Cloud
+                      <span className="px-1.5 py-0.5 bg-emerald-900/90 text-[#3ECF8E] text-[9px] font-bold rounded-xs border border-emerald-500/40">
+                        {isRtl ? 'سحابي موثق' : 'Cloud Stream'}
                       </span>
                     ) : (
-                      <span className="px-1.5 py-0.5 bg-[#1F4A3B]/90 text-white text-[9px] font-mono font-bold rounded-xs border border-[#D1B995]/30">
-                        {isRtl ? 'أصلي محلي' : 'Original Local'}
+                      <span className="px-1.5 py-0.5 bg-[#1F4A3B]/90 text-white text-[9px] font-bold rounded-xs border border-[#D1B995]/30">
+                        {isRtl ? 'أصلي معتمد' : 'Original Production'}
                       </span>
                     )}
                   </div>
@@ -240,19 +234,16 @@ export const VideoLibrary: React.FC<VideoLibraryProps> = ({
                     </p>
                   </div>
 
-                  {/* Context notice & expected filename */}
+                  {/* Context notice */}
                   <div className="mt-2.5 pt-2 border-t border-[#F2EEE5] flex flex-col gap-1 text-[10px] text-[#5C5C5C]">
                     <div className="flex items-center gap-1.5">
                       <Info className="w-3 h-3 text-[#B89B6A] shrink-0" />
                       <span className="truncate">
                         {hasRealVideo
                           ? (isRtl ? 'فيديو موثق ومعتمد من إدارة المهندس محمد حسني' : 'Verified project video asset')
-                          : (isRtl ? 'سيظهر الفيديو هنا تلقائيًا فور وضعه في المجلد المخصص دون أي رابط مكسور' : 'Video displays automatically once placed in the target directory')}
+                          : (isRtl ? 'سيظهر الفيديو هنا تلقائيًا فور اعتماده دون أي رابط مكسور' : 'Video displays automatically once verified')}
                       </span>
                     </div>
-                    <span className="font-mono text-[9px] text-[#1F4A3B] opacity-75 truncate">
-                      {video.defaultFilePath}
-                    </span>
                   </div>
                 </div>
               </div>
@@ -321,8 +312,8 @@ export const VideoLibrary: React.FC<VideoLibraryProps> = ({
             >
               <div className="flex items-center justify-between px-5 py-3 border-b border-[#D1B995]/20 bg-[#0D1A16]">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-[#D1B995] px-2 py-0.5 bg-[#1F4A3B] rounded-xs">
-                    {activeVideoModal.slotKey}
+                  <span className="text-xs font-bold text-[#D1B995] px-2.5 py-0.5 bg-[#1F4A3B] rounded-xs">
+                    {isRtl ? 'توثيق فيديو معتمد' : 'Verified Project Video'}
                   </span>
                   <h4 className="text-sm font-bold text-white">
                     {currentLang === 'ar' ? activeVideoModal.titleAr : activeVideoModal.titleEn}

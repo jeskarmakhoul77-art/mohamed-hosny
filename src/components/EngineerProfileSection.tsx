@@ -152,8 +152,8 @@ export const EngineerProfileSection: React.FC<EngineerProfileSectionProps> = ({
                   </div>
                 </div>
 
-                <div className="text-[10px] font-mono text-[#B89B6A] bg-[#152B24] px-2 py-0.5 rounded-xs text-[#D1B995]">
-                  ENG-CREDENTIAL
+                <div className="text-[10px] font-bold text-[#B89B6A] bg-[#152B24] px-2 py-0.5 rounded-xs text-[#D1B995]">
+                  {currentLang === 'ar' ? 'اعتماد هندسي' : 'Accredited'}
                 </div>
               </div>
 
