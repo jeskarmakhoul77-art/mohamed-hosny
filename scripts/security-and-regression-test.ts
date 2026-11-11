@@ -149,7 +149,16 @@ async function runTests() {
   const sitemapRes = await fetch(`${BASE_URL}/sitemap.xml`);
   const sitemapText = await sitemapRes.text();
   assert(sitemapRes.status === 200, 'sitemap.xml returns HTTP 200 OK');
+  const sitemapContentType = sitemapRes.headers.get('content-type') || '';
+  assert(sitemapContentType.includes('xml'), 'sitemap.xml Content-Type is XML (application/xml or text/xml)');
+  assert(sitemapText.startsWith('<?xml'), 'sitemap.xml begins with standard XML declaration');
+  assert(sitemapText.includes('<urlset') && sitemapText.includes('</urlset>'), 'sitemap.xml wraps entries in urlset tag');
+  assert(sitemapText.includes('https://mohamed-hosny-nine.vercel.app/'), 'sitemap.xml includes root URL');
   assert(sitemapText.includes('https://mohamed-hosny-nine.vercel.app/links'), 'sitemap.xml includes /links route');
+  assert(sitemapText.includes('<loc>') && sitemapText.includes('</loc>'), 'sitemap.xml uses valid loc tags');
+  assert(sitemapText.includes('<lastmod>') && sitemapText.includes('</lastmod>'), 'sitemap.xml uses valid lastmod tags');
+  assert(sitemapText.includes('<changefreq>') && sitemapText.includes('</changefreq>'), 'sitemap.xml uses valid changefreq tags');
+  assert(sitemapText.includes('<priority>') && sitemapText.includes('</priority>'), 'sitemap.xml uses valid priority tags');
 
   // Verify stateless HMAC token format (two base64url segments separated by a period)
   assert(loginData.token.includes('.'), 'Session token is signed HMAC stateless format (contains dot separator)');

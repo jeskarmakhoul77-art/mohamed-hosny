@@ -1371,6 +1371,36 @@ app.post('/api/media/reset-all', requireAdminAuth, async (req, res) => {
   return res.json({ success: true });
 });
 
+// Explicit route for sitemap.xml to guarantee application/xml content-type
+app.get('/sitemap.xml', (_req, res) => {
+  const candidates = [
+    path.resolve(__dirname, 'public', 'sitemap.xml'),
+    path.resolve(__dirname, 'dist', 'sitemap.xml'),
+    path.resolve(__dirname, 'sitemap.xml')
+  ];
+  const found = candidates.find((p) => fs.existsSync(p));
+  if (found) {
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    return res.sendFile(found);
+  }
+  return res.status(404).type('text/plain').send('sitemap.xml not found');
+});
+
+// Explicit route for robots.txt
+app.get('/robots.txt', (_req, res) => {
+  const candidates = [
+    path.resolve(__dirname, 'public', 'robots.txt'),
+    path.resolve(__dirname, 'dist', 'robots.txt'),
+    path.resolve(__dirname, 'robots.txt')
+  ];
+  const found = candidates.find((p) => fs.existsSync(p));
+  if (found) {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    return res.sendFile(found);
+  }
+  return res.status(404).type('text/plain').send('robots.txt not found');
+});
+
 // Serve public static assets
 app.use(express.static(path.resolve(__dirname, 'public')));
 
