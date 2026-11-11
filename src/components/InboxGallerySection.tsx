@@ -290,7 +290,7 @@ export const InboxGallerySection: React.FC<InboxGallerySectionProps> = ({
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-4">
               {visiblePhotos.map((item) => {
                 const globalIndex = filteredPhotos.indexOf(item);
                 const safeUrl = getSafeImageUrl(item.url);
@@ -302,7 +302,7 @@ export const InboxGallerySection: React.FC<InboxGallerySectionProps> = ({
                   <div
                     key={item.id}
                     onClick={() => setActivePhotoIndex(globalIndex)}
-                    className="group relative bg-white border border-[#D1B995]/30 hover:border-[#D1B995] rounded-xs overflow-hidden shadow-2xs hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer"
+                    className="group relative bg-white border border-[#D1B995]/30 hover:border-[#D1B995] rounded-xs overflow-hidden shadow-2xs hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer"
                   >
                     {/* Image Container with 4:3 Aspect Ratio */}
                     <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#1F4A3B]/5">
@@ -325,19 +325,19 @@ export const InboxGallerySection: React.FC<InboxGallerySectionProps> = ({
 
                       {/* Hover Zoom Icon & Action Prompt (Centered) */}
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="w-10 h-10 rounded-full bg-[#1F4A3B]/90 border border-[#D1B995] text-[#D1B995] flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                        <div className="w-9 h-9 rounded-full bg-[#1F4A3B]/90 border border-[#D1B995] text-[#D1B995] flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
                           <ZoomIn className="w-4 h-4" />
                         </div>
                       </div>
                     </div>
 
                     {/* Card Footer with Details — Sleek & Compact */}
-                    <div className="p-3 bg-white border-t border-[#D1B995]/20 flex flex-col justify-between flex-1">
+                    <div className="p-2.5 sm:p-3 bg-white border-t border-[#D1B995]/20 flex flex-col justify-between flex-1">
                       <div>
                         <h4 className="font-bold text-xs sm:text-sm text-[#1F4A3B] line-clamp-1 group-hover:text-[#8C6D3F] transition-colors">
                           {cardStage}
                         </h4>
-                        <p className="text-[11px] text-[#5C5C5C] line-clamp-2 mt-1 leading-relaxed">
+                        <p className="text-[11px] text-[#5C5C5C] line-clamp-2 mt-0.5 leading-relaxed">
                           {cardDesc}
                         </p>
                       </div>

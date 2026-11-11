@@ -78,8 +78,8 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
           </button>
         </div>
 
-        {/* Services Grid — Sleek, Compact Architectural Forest Green Palette */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+        {/* Services Grid — Sleek Horizontal Rectangular Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
           {displayedServices.map((srv) => {
             const IconComponent = ICON_MAP[srv.icon] || Home;
             const title = currentLang === 'ar' ? srv.titleAr : srv.titleEn;
@@ -88,54 +88,56 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
             return (
               <div
                 key={srv.id}
-                className={`relative p-4 sm:p-5 rounded-xs border transition-all flex flex-col justify-between text-[#F7F5F0] shadow-2xs hover:shadow-md ${
+                className={`relative p-3.5 sm:p-4 rounded-xs border transition-all flex items-start gap-3.5 sm:gap-4 text-[#F7F5F0] shadow-2xs hover:shadow-md ${
                   srv.featured
                     ? 'bg-gradient-to-br from-[#1F4A3B] via-[#1A382E] to-[#132720] border-[#D1B995]/50 ring-1 ring-[#D1B995]/20'
                     : 'bg-gradient-to-br from-[#1B3E32] via-[#163329] to-[#122820] border-[#D1B995]/30 hover:border-[#D1B995]/60'
                 }`}
               >
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <div
-                      className={`w-9 h-9 rounded-xs flex items-center justify-center transition-colors ${
-                        srv.featured
-                          ? 'bg-[#152B24] text-[#D1B995] border border-[#D1B995]/50'
-                          : 'bg-[#152B24]/80 text-[#D1B995] border border-[#D1B995]/30'
-                      }`}
-                    >
-                      <IconComponent className="w-4 h-4" />
-                    </div>
-
-                    {/* Featured Offering Marker or Index Number */}
-                    {srv.featured ? (
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#D1B995] bg-[#152B24]/90 px-2 py-0.5 rounded-xs border border-[#D1B995]/30">
-                        {t.coreOfferingBadge}
-                      </span>
-                    ) : (
-                      <span className="text-[11px] font-mono text-[#D1B995]/70">
-                        0{srv.id}
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="text-sm sm:text-base font-bold leading-snug mb-1.5 text-[#F7F5F0]">
-                    {title}
-                  </h3>
-
-                  <p className="text-xs leading-relaxed text-[#F7F5F0]/80">
-                    {summary}
-                  </p>
+                {/* Icon Box */}
+                <div
+                  className={`w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xs flex items-center justify-center transition-colors ${
+                    srv.featured
+                      ? 'bg-[#152B24] text-[#D1B995] border border-[#D1B995]/50'
+                      : 'bg-[#152B24]/80 text-[#D1B995] border border-[#D1B995]/30'
+                  }`}
+                >
+                  <IconComponent className="w-4 h-4" />
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-[#D1B995]/20">
-                  <button
-                    onClick={() => onOpenWhatsApp(title)}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#D1B995] hover:text-[#E5D1B0] transition-colors cursor-pointer group"
-                  >
-                    <MessageCircle className="w-3.5 h-3.5 fill-current/20 group-hover:scale-110 transition-transform" />
-                    <span>{t.requestServiceQuote}</span>
-                    <ArrowIcon className="w-3 h-3" />
-                  </button>
+                {/* Content & Action */}
+                <div className="flex-1 min-w-0 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <h3 className="text-sm sm:text-base font-bold leading-snug text-[#F7F5F0] truncate">
+                        {title}
+                      </h3>
+                      {srv.featured ? (
+                        <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-[#D1B995] bg-[#152B24]/90 px-1.5 py-0.5 rounded-xs border border-[#D1B995]/30">
+                          {t.coreOfferingBadge}
+                        </span>
+                      ) : (
+                        <span className="shrink-0 text-[10px] font-mono text-[#D1B995]/70">
+                          0{srv.id}
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-xs leading-relaxed text-[#F7F5F0]/80 line-clamp-2">
+                      {summary}
+                    </p>
+                  </div>
+
+                  <div className="mt-2.5 pt-2 border-t border-[#D1B995]/15 flex items-center justify-between">
+                    <button
+                      onClick={() => onOpenWhatsApp(title)}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#D1B995] hover:text-[#E5D1B0] transition-colors cursor-pointer group"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 fill-current/20 group-hover:scale-110 transition-transform" />
+                      <span>{t.requestServiceQuote}</span>
+                      <ArrowIcon className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
               </div>
             );

@@ -29,9 +29,18 @@ export const Hero: React.FC<HeroProps> = ({ currentLang, onOpenWhatsApp }) => {
 
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [slideImageErrors, setSlideImageErrors] = useState<Record<number, boolean>>({});
   const slideIntervalRef = useRef<number | null>(null);
 
-  // Auto-advance slides every 5.5 seconds if playing
+  // Preload all 4 hero images on mount so slides appear instantaneously with zero flash
+  useEffect(() => {
+    HERO_SLIDES.forEach((slide) => {
+      const img = new Image();
+      img.src = slide.imageUrl;
+    });
+  }, []);
+
+  // Auto-advance slides every 6 seconds if playing
   useEffect(() => {
     if (!isPlaying) {
       if (slideIntervalRef.current) clearInterval(slideIntervalRef.current);
@@ -40,7 +49,7 @@ export const Hero: React.FC<HeroProps> = ({ currentLang, onOpenWhatsApp }) => {
 
     slideIntervalRef.current = window.setInterval(() => {
       setCurrentSlideIndex((prev) => (prev + 1) % HERO_SLIDES.length);
-    }, 5500);
+    }, 6000);
 
     return () => {
       if (slideIntervalRef.current) clearInterval(slideIntervalRef.current);
@@ -57,39 +66,50 @@ export const Hero: React.FC<HeroProps> = ({ currentLang, onOpenWhatsApp }) => {
     setCurrentSlideIndex((prev) => (prev + 1) % HERO_SLIDES.length);
   };
 
+  const handleImageError = (slideId: number, failedUrl: string) => {
+    console.warn(`[Hero] Failed to load slide #${slideId} from URL: ${failedUrl}. Using original fallback slide.`);
+    setSlideImageErrors((prev) => ({ ...prev, [slideId]: true }));
+  };
+
   return (
-    <section className="relative overflow-hidden bg-[#152B24] text-[#F7F5F0] min-h-[500px] sm:min-h-[540px] lg:min-h-[580px] flex items-center border-b border-[#D1B995]/25">
+    <section className="relative overflow-hidden bg-[#152B24] text-[#F7F5F0] min-h-[480px] sm:min-h-[520px] lg:min-h-[560px] flex items-center border-b border-[#D1B995]/25">
       {/* 1. Cinematic Background Slideshow Layer */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
         {HERO_SLIDES.map((slide, index) => {
           const isActive = index === currentSlideIndex;
+          const isError = slideImageErrors[slide.id];
+          const imageSrc = isError ? HERO_SLIDES[0].imageUrl : slide.imageUrl;
+
           return (
             <div
               key={slide.id}
+              aria-hidden={!isActive}
               className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                isActive ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
               }`}
             >
               <img
-                src={slide.imageUrl}
+                src={imageSrc}
                 alt={currentLang === 'ar' ? slide.titleAr : slide.titleEn}
+                onError={() => handleImageError(slide.id, slide.imageUrl)}
                 className={`w-full h-full object-cover object-center transform transition-transform duration-[7000ms] ease-out motion-reduce:transform-none ${
                   isActive ? 'scale-105' : 'scale-100'
                 }`}
-                loading={index === 0 ? 'eager' : 'lazy'}
+                loading="eager"
+                decoding="async"
                 referrerPolicy="no-referrer"
               />
             </div>
           );
         })}
 
-        {/* Architectural Vignette & Text Scrim Overlay — Carefully balanced for legibility and image beauty */}
-        <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#152B24]/95 via-[#152B24]/50 to-[#152B24]/35" />
-        <div className="absolute inset-0 z-20 bg-gradient-to-r rtl:bg-gradient-to-l from-[#152B24]/90 via-[#152B24]/60 to-[#152B24]/20 lg:to-transparent" />
+        {/* Architectural Vignette & Text Scrim Overlay — High contrast for text, fully luminous for photography */}
+        <div className="absolute inset-0 z-20 bg-gradient-to-t from-[#152B24]/85 via-[#152B24]/40 to-[#152B24]/20" />
+        <div className="absolute inset-0 z-20 bg-gradient-to-r rtl:bg-gradient-to-l from-[#152B24]/80 via-[#152B24]/35 to-transparent" />
       </div>
 
       {/* 2. Main Hero Foreground Content */}
-      <div className="relative z-30 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-16 w-full">
+      <div className="relative z-30 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-14 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
           
           {/* Main Editorial Text Column */}

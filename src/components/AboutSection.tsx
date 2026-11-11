@@ -59,20 +59,22 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ currentLang }) => {
               <h3 className="text-xs font-bold uppercase tracking-widest text-[#1F4A3B] mb-4">
                 {t.valuesTitle}
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                 {pillars.map((pillar, idx) => {
                   const Icon = pillar.icon;
                   return (
-                    <div key={idx} className="p-3.5 bg-white border border-[#D1B995]/25 rounded-sm">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <Icon className="w-4 h-4 text-[#B89B6A] shrink-0" />
-                        <h4 className="text-xs font-bold text-[#1F4A3B]">
+                    <div key={idx} className="p-2.5 sm:p-3 bg-white border border-[#D1B995]/25 rounded-xs flex items-start gap-2.5 shadow-2xs">
+                      <div className="w-7 h-7 rounded-xs bg-[#1F4A3B]/10 flex items-center justify-center shrink-0 mt-0.5">
+                        <Icon className="w-3.5 h-3.5 text-[#B89B6A]" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-xs font-bold text-[#1F4A3B] leading-tight mb-0.5">
                           {pillar.title}
                         </h4>
+                        <p className="text-[11px] text-[#5C5C5C] leading-snug">
+                          {pillar.desc}
+                        </p>
                       </div>
-                      <p className="text-xs text-[#5C5C5C] leading-relaxed">
-                        {pillar.desc}
-                      </p>
                     </div>
                   );
                 })}

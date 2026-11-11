@@ -29,8 +29,8 @@ export const ProjectProcess: React.FC<ProjectProcessProps> = ({ currentLang }) =
           </p>
         </div>
 
-        {/* 7-Step Architectural Process Timeline */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+        {/* 7-Step Architectural Process Timeline — Sleek Horizontal Strips */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-3.5">
           {WORK_PROCESS_STEPS.map((step) => {
             const title = currentLang === 'ar' ? step.titleAr : step.titleEn;
             const desc = currentLang === 'ar' ? step.descAr : step.descEn;
@@ -38,29 +38,25 @@ export const ProjectProcess: React.FC<ProjectProcessProps> = ({ currentLang }) =
             return (
               <div
                 key={step.step}
-                className="relative p-4 sm:p-5 bg-white border border-[#D1B995]/30 rounded-sm shadow-xs flex flex-col justify-between"
+                className="relative p-3 sm:p-3.5 bg-white border border-[#D1B995]/30 rounded-xs shadow-2xs hover:shadow-xs transition-shadow flex items-start gap-3"
               >
-                <div>
-                  {/* Step Index Numerals */}
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-2xl font-bold font-mono text-[#D1B995]">
-                      {step.step}
-                    </span>
-                    <span className="w-6 h-[1.5px] bg-[#D1B995]/40" />
-                  </div>
-
-                  <h3 className="text-base font-bold text-[#1F4A3B] mb-2 leading-snug">
-                    {title}
-                  </h3>
-
-                  <p className="text-xs sm:text-sm text-[#5C5C5C] leading-relaxed">
-                    {desc}
-                  </p>
+                {/* Step Index Numeral */}
+                <div className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-xs bg-[#1F4A3B] text-[#D1B995] flex items-center justify-center font-bold font-mono text-xs sm:text-sm shadow-2xs">
+                  {step.step}
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-[#F2EEE5] flex items-center gap-1 text-[11px] font-medium text-[#1F4A3B]">
-                  <Check className="w-3.5 h-3.5 text-[#B89B6A]" />
-                  <span>{currentLang === 'ar' ? 'مرحلة معتمدة' : 'Standard Protocol'}</span>
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-1.5 mb-1">
+                    <h3 className="text-xs sm:text-sm font-bold text-[#1F4A3B] leading-snug">
+                      {title}
+                    </h3>
+                    <Check className="w-3.5 h-3.5 text-[#B89B6A] shrink-0" />
+                  </div>
+
+                  <p className="text-[11px] sm:text-xs text-[#5C5C5C] leading-relaxed line-clamp-2">
+                    {desc}
+                  </p>
                 </div>
               </div>
             );
@@ -68,7 +64,7 @@ export const ProjectProcess: React.FC<ProjectProcessProps> = ({ currentLang }) =
         </div>
 
         {/* Process Disclaimer */}
-        <div className="mt-10 p-4 bg-white border border-[#D1B995]/30 rounded-sm flex items-start gap-3 text-xs text-[#5C5C5C]">
+        <div className="mt-6 p-3 bg-white border border-[#D1B995]/30 rounded-xs flex items-start gap-2.5 text-xs text-[#5C5C5C]">
           <Info className="w-4 h-4 text-[#B89B6A] shrink-0 mt-0.5" />
           <span>{t.processDisclaimer}</span>
         </div>

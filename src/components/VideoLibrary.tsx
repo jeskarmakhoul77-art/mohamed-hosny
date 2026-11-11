@@ -226,31 +226,31 @@ export const VideoLibrary: React.FC<VideoLibraryProps> = ({
                   </div>
                 </div>
 
-                {/* Content Details */}
-                <div className="p-5 flex flex-col flex-1 justify-between">
-                  <div className="space-y-2">
-                    <span className="text-[11px] font-bold text-[#B89B6A] uppercase tracking-wider block">
+                {/* Content Details — Sleek & Compact */}
+                <div className="p-3.5 sm:p-4 flex flex-col flex-1 justify-between">
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-bold text-[#B89B6A] uppercase tracking-wider block">
                       {subtitle}
                     </span>
-                    <h3 className="text-base font-bold text-[#1F4A3B] leading-snug">
+                    <h3 className="text-sm sm:text-base font-bold text-[#1F4A3B] leading-snug">
                       {title}
                     </h3>
-                    <p className="text-xs text-[#5C5C5C] leading-relaxed line-clamp-3">
+                    <p className="text-xs text-[#5C5C5C] leading-relaxed line-clamp-2">
                       {desc}
                     </p>
                   </div>
 
                   {/* Context notice & expected filename */}
-                  <div className="mt-4 pt-3 border-t border-[#F2EEE5] flex flex-col gap-1 text-[11px] text-[#5C5C5C]">
+                  <div className="mt-2.5 pt-2 border-t border-[#F2EEE5] flex flex-col gap-1 text-[10px] text-[#5C5C5C]">
                     <div className="flex items-center gap-1.5">
-                      <Info className="w-3.5 h-3.5 text-[#B89B6A] shrink-0" />
+                      <Info className="w-3 h-3 text-[#B89B6A] shrink-0" />
                       <span className="truncate">
                         {hasRealVideo
                           ? (isRtl ? 'فيديو موثق ومعتمد من إدارة المهندس محمد حسني' : 'Verified project video asset')
                           : (isRtl ? 'سيظهر الفيديو هنا تلقائيًا فور وضعه في المجلد المخصص دون أي رابط مكسور' : 'Video displays automatically once placed in the target directory')}
                       </span>
                     </div>
-                    <span className="font-mono text-[10px] text-[#1F4A3B] opacity-75">
+                    <span className="font-mono text-[9px] text-[#1F4A3B] opacity-75 truncate">
                       {video.defaultFilePath}
                     </span>
                   </div>

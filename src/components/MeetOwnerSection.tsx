@@ -100,19 +100,19 @@ export const MeetOwnerSection: React.FC<MeetOwnerSectionProps> = ({
             </div>
 
             {/* Video Side Context Column */}
-            <div className="lg:col-span-4 p-6 sm:p-8 flex flex-col justify-between bg-[#1F4A3B] text-[#F7F5F0] border-t lg:border-t-0 lg:border-l lg:border-r border-[#D1B995]/20">
-              <div className="space-y-4">
-                <div className="text-[11px] font-semibold tracking-wider uppercase text-[#D1B995]">
+            <div className="lg:col-span-4 p-4 sm:p-6 flex flex-col justify-between bg-[#1F4A3B] text-[#F7F5F0] border-t lg:border-t-0 lg:border-l lg:border-r border-[#D1B995]/20">
+              <div className="space-y-3">
+                <div className="text-[10px] font-semibold tracking-wider uppercase text-[#D1B995]">
                   {currentLang === 'ar' ? 'حديث الإدارة والمسؤولية' : 'Leadership & Direct Supervision'}
                 </div>
-                <h3 className="text-xl font-bold leading-snug text-[#F7F5F0]">
+                <h3 className="text-lg sm:text-xl font-bold leading-snug text-[#F7F5F0]">
                   {currentLang === 'ar' ? videoSlot.titleAr : videoSlot.titleEn}
                 </h3>
-                <p className="text-xs sm:text-sm text-[#F7F5F0]/80 leading-relaxed">
+                <p className="text-xs text-[#F7F5F0]/80 leading-relaxed">
                   {currentLang === 'ar' ? videoSlot.descriptionAr : videoSlot.descriptionEn}
                 </p>
                 
-                <div className="pt-4 border-t border-[#F7F5F0]/10 space-y-2 text-xs text-[#F7F5F0]/75">
+                <div className="pt-3 border-t border-[#F7F5F0]/10 space-y-1.5 text-xs text-[#F7F5F0]/75">
                   <div className="flex items-start gap-2">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#D1B995] mt-1.5 shrink-0" />
                     <span>{currentLang === 'ar' ? 'معاينة شخصية للموقع واستماع لاحتياجات العميل' : 'Direct on-site consultation tailored to your space'}</span>
@@ -132,12 +132,12 @@ export const MeetOwnerSection: React.FC<MeetOwnerSectionProps> = ({
                 </div>
               </div>
 
-              <div className="pt-6 mt-6 border-t border-[#F7F5F0]/10">
+              <div className="pt-4 mt-4 border-t border-[#F7F5F0]/10">
                 <button
                   onClick={() => onOpenWhatsApp(currentLang === 'ar' ? 'استشارة تشطيب مع المهندس محمد حسني' : 'Finishing Consultation with Eng. Mohamed Hosny')}
-                  className="w-full py-3 px-4 text-xs font-bold tracking-wider uppercase bg-[#D1B995] hover:bg-[#E5D1B0] text-[#1F4A3B] transition-colors rounded-sm text-center flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                  className="w-full py-2.5 px-3 text-xs font-bold tracking-wider uppercase bg-[#D1B995] hover:bg-[#E5D1B0] text-[#1F4A3B] transition-colors rounded-sm text-center flex items-center justify-center gap-2 cursor-pointer shadow-md"
                 >
-                  <MessageCircle className="w-4 h-4 fill-current/20" />
+                  <MessageCircle className="w-3.5 h-3.5 fill-current/20" />
                   <span>{t.bookSiteVisitBtn}</span>
                 </button>
               </div>

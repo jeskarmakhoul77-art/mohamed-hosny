@@ -182,32 +182,32 @@ export const ApartmentCaseStudy: React.FC<ApartmentCaseStudyProps> = ({
             </div>
 
             {/* Stage Description & Milestone Details */}
-            <div className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between bg-white text-[#242424]">
-              <div className="space-y-4">
-                <div className="text-xs font-bold uppercase tracking-wider text-[#B89B6A]">
+            <div className="lg:col-span-5 p-4 sm:p-6 flex flex-col justify-between bg-white text-[#242424]">
+              <div className="space-y-3">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-[#B89B6A]">
                   {currentLang === 'ar' ? activeStage.phaseLabelAr : activeStage.phaseLabelEn} · {activeStage.slotKey}
                 </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-[#1F4A3B]">
+                <h3 className="text-lg sm:text-xl font-bold text-[#1F4A3B]">
                   {currentLang === 'ar' ? activeStage.titleAr : activeStage.titleEn}
                 </h3>
-                <p className="text-sm text-[#5C5C5C] leading-relaxed">
+                <p className="text-xs sm:text-sm text-[#5C5C5C] leading-relaxed">
                   {currentLang === 'ar' ? activeStage.descriptionAr : activeStage.descriptionEn}
                 </p>
 
-                <div className="pt-4 border-t border-[#F2EEE5] space-y-2.5 text-xs text-[#5C5C5C]">
+                <div className="pt-3 border-t border-[#F2EEE5] space-y-2 text-xs text-[#5C5C5C]">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#1F4A3B] shrink-0" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#1F4A3B] shrink-0" />
                     <span>{currentLang === 'ar' ? 'إشراف مباشر وفحص هندسي للمرحلة' : 'Supervised execution & engineering review'}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#1F4A3B] shrink-0" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-[#1F4A3B] shrink-0" />
                     <span>{currentLang === 'ar' ? 'التسليم طبقاً للمخطط الزمني المعتمد' : 'Aligned strictly with agreed milestones'}</span>
                   </div>
                 </div>
               </div>
 
               {/* Navigation Arrows for Stages & Direct WhatsApp CTA */}
-              <div className="pt-6 mt-6 border-t border-[#F2EEE5] space-y-4">
+              <div className="pt-4 mt-4 border-t border-[#F2EEE5] space-y-3">
                 <div className="flex items-center justify-between">
                   <button
                     disabled={activeStageIndex === 0}
